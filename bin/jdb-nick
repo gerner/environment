@@ -5,11 +5,15 @@ params=""
 if [ -e .classes ] 
 then
 	params=`echo $params -f .classes`
+else
+	echo "warning: .classes does not exist"
 fi
 
 if [ -e .classes-dependencies ]
 then
 	params=`echo $params -f .classes-dependencies`
+else
+	echo "warning: .classes-dependencies does not exist"
 fi
 
 jdbParams=""
