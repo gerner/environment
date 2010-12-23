@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+
+vimname=$(pwd | grep -o '[^/]*/[^/]*$')
+vim --servername $vimname $1
+

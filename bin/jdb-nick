@@ -1,0 +1,30 @@
+#!/bin/bash
+set -e
+
+params=""
+if [ -e .classes ] 
+then
+	params=`echo $params -f .classes`
+fi
+
+if [ -e .classes-dependencies ]
+then
+	params=`echo $params -f .classes-dependencies`
+fi
+
+jdbParams=""
+while [ "$1" != "" ]; do
+	jdbParams=`echo $jdbParams $1`
+	shift
+done
+
+
+if [ -e .sourcepath-dependencies ]
+then
+	sourcepath=`cat .sourcepath-dependencies | tr '\n' ':'`
+fi
+sourceCandidates=`find . -name java | tr '\n' ':'`
+sourcepath=`echo $sourcepath:$sourceCandidates`
+
+rlwrap -b\"\" $params jdb -sourcepath $sourcepath $jdbParams
+

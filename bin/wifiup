@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+sudo ifdown eth0
+sudo wpa_action wlan0 stop
+sleep 2
+
+sudo /etc/init.d/network-manager stop || true
+sudo killall dhclient || true
+sudo killall wpa_supplicant || true
+
+sudo ifup wlan0
+sleep 2
+iwconfig
+ifconfig

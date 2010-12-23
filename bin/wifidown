@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+sudo ifdown eth0
+sudo wpa_action wlan0 stop || true
+sleep 2
+sudo killall dhclient || true
+sudo ifup eth0
+sleep 2
+ifconfig

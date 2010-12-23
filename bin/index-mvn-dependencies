@@ -1,0 +1,59 @@
+#!/bin/bash
+set -e
+
+t=$(tempfile) || exit
+t2=$(tempfile) || exit
+t3=$(tempfile) || exit
+tempClasses=$(tempfile) || exit
+
+echo "finding dependencies..."
+mvn $1 dependency:build-classpath | grep -v "INFO" | tr ':' '\n' | grep ".jar$" > $t
+
+echo "extracting source"
+
+orginalDirectory=`pwd`
+for f in `cat $t`
+do
+	bareJar=$f
+	f=`echo $f | sed 's/\.jar$/-sources.jar/'`
+	if [ `echo $f | grep SNAPSHOT` ]
+	then
+		suffix=".lastUpdated"
+	else
+		suffix=""
+	fi
+	if [ -e $f$suffix ]
+	then
+		d=$(echo $f | sed -e 's/^.*\/\([^\/]*\)\.jar$/\1/')
+		if [ $f$suffix -nt ~/.sources/$d ] 
+		then
+			rm -rf ~/.sources/$d
+			mkdir ~/.sources/$d
+			cd ~/.sources/$d
+			jar xf $f$suffix
+			chmod -w -R ~/.sources/$d
+			echo -n "."
+		fi
+		echo ~/.sources/$d >> $t2
+
+		if [ $bareJar -nt ~/.sources/$d/.classes ]
+		then
+			chmod +w ~/.sources/$d
+			jar tf $bareJar | grep .class | sed 's/\(.*\)\.class/\1/' | tr '/' '.' > ~/.sources/$d/.classes
+			chmod -w ~/.sources/$d
+			echo -n "."
+		fi
+		cat ~/.sources/$d/.classes >> $tempClasses
+	fi
+done
+echo ""
+echo "indexing..."
+ctags --extra=+f+q -a -f $t3 -R -L $t2
+
+mv $t3 $orginalDirectory/.tags-source
+mv $tempClasses $orginalDirectory/.classes-dependencies
+mv $t2 $orginalDirectory/.sourcepath-dependencies
+
+rm $t
+
+echo "done."

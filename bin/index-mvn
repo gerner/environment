@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+
+#create the tags
+ctags --extra=+f+q --fields=+iaSl -f .tags -R --exclude=target .
+
+#create the list of classes for tab completion in rlwrap jdb
+find . -name *.class | sed 's/.*\/target\/[^\/]*\/\(.*\)\.class/\1/' | tr '/' '.' > .classes
+
