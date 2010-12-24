@@ -8,4 +8,8 @@ I have this checked out and add the bin directory to my path and symlink the con
 	$ ln -s ~/environment/config/.bashrc ~/.bashrc
 	$ ln -s ~/environment/config/.vimrc ~/.vimrc
 
-Then I've got my environment set up.
+Then I've got my environment set up. Doing this manually is not necessary; see Installation below.
+
+## Installing ## 
+
+There is a handy install.sh script that will install the necessary files.  This script will create symbolic links from the locations where the various config files should live to their environment sources.
