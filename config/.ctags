@@ -1,0 +1,4 @@
+--langdef=xml
+--langdef=properties
+--langmap=xml:.xml
+--langmap=properties:.properties
