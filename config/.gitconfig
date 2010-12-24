@@ -8,11 +8,6 @@
 	bare = false
 	logallrefupdates = true
 	autocrlf = false
-[svn-remote "svn"]
-	url = https://kihasoftware.jira.com/svn
-	fetch = HERMES/software/server/services/mail-data-service/trunk:refs/remotes/trunk
-	branches = HERMES/software/server/services/mail-data-service/branches/*:refs/remotes/*
-	tags = HERMES/software/server/services/mail-data-service/tags/*:refs/remotes/tags/*
 [color]
 	status = auto
 	diff = auto
