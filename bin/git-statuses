@@ -1,0 +1,23 @@
+#!/bin/bash
+
+for x in *
+do
+	pushd $x > /dev/null
+
+	didPWD=""
+	if ! git status | grep -q "nothing to commit (working directory clean)"; then
+		if [ -z $didPWD]; then pwd; didPWD="1"; fi
+		git status
+		echo ""
+	fi
+	
+	if grep -q "svn" .git/config ; then
+		if [ `git status-svn` ]; then
+			if [ -z $didPWD]; then pwd; didPWD="1"; fi
+			git status-svn
+			echo ""
+		fi
+	fi
+
+	popd > /dev/null
+done
