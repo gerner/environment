@@ -13,3 +13,5 @@ set foldcolumn=2
 set foldminlines=3
 set statusline=%n\ %m\ %F%r%h%w\ [FORMAT=%{&ff}]\ %m\ [POS=%l,%v][%p%%]\ [LEN=%L]
 set completeopt=menuone,menu,longest,preview
+set tabstop=4
+set softtabstop=4
