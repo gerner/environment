@@ -12,9 +12,10 @@ do
 	fi
 	
 	if grep -q "svn" .git/config ; then
-		if [ `git status-svn` ]; then
+		status_svn=`git status-svn`
+		if [ "$status_svn" ]; then
 			if [ -z $didPWD]; then pwd; didPWD="1"; fi
-			git status-svn
+			echo "$status_svn"
 			echo ""
 		fi
 	fi

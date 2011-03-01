@@ -98,7 +98,7 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 
-export PATH=/var/lib/gems/1.8/bin:$PATH:/usr/lib/jvm/java-6-sun/bin:/home/nick/downloads/android-sdk-linux_86/tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin
+export PATH=$PATH:/usr/lib/jvm/java-6-sun/bin:/home/nick/downloads/android-sdk-linux_86/tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin
 
 export JDK_HOME=/usr/lib/jvm/java-6-sun
 export JAVA_HOME=/usr/lib/jvm/java-6-sun
