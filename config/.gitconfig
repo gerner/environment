@@ -14,3 +14,5 @@
 	branches = auto
 [alias]
 	status-svn = !"git log `git svn log --show-commit --oneline --limit=1 | awk '{print $3}'`..HEAD"
+	diff-svn = !"git diff `git svn log --show-commit --oneline --limit=1 | awk '{print $3}'`..HEAD"
+
