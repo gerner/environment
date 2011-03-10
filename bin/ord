@@ -1,0 +1,5 @@
+#!/bin/bash
+
+printf '%s is ' "'$1'" 1>&2
+printf '%d' "'$1"
+printf '\n' 1>&2
