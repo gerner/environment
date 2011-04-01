@@ -2,8 +2,8 @@
 set -e
 #set -x
 
-s1="config/.bashrc config/.vimrc config/.gitconfig config/.ctags"
-d1="$HOME/.bashrc $HOME/.vimrc $HOME/.gitconfig $HOME/.ctags"
+s1="config/.bashrc config/.vimrc config/.gitconfig config/.ctags config/ssh_config"
+d1="$HOME/.bashrc $HOME/.vimrc $HOME/.gitconfig $HOME/.ctags $HOME/.ssh/config"
 
 linkDestinationsToSources() {
 		if [[ -z $1 || -z $2 ]]
@@ -15,10 +15,6 @@ linkDestinationsToSources() {
 		sources=( `echo "$1"` )
 		destinations=( `echo "$2"` )
 		count=${#sources[@]}
-
-		echo "${sources[@]}"
-		echo "${destinations[@]}"
-		echo $count
 
 		if [ $count -ne ${#destinations[@]} ]
 		then 
