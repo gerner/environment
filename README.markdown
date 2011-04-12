@@ -1,6 +1,6 @@
 # Nick's Environment
 
-This is my environment, a set of scripts and configs I use to make life a little easier.
+This is my environment, a.k.a. dotfiles, a set of scripts and configs I use to make life a little easier.
 
 I have this checked out and add the bin directory to my path and symlink the config files from where the system expects them.  For exmaple
 
