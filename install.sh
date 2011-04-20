@@ -2,8 +2,8 @@
 set -e
 #set -x
 
-s1="config/.bashrc config/.vimrc config/.gitconfig config/.ctags config/ssh_config"
-d1="$HOME/.bashrc $HOME/.vimrc $HOME/.gitconfig $HOME/.ctags $HOME/.ssh/config"
+s1="config/.bashrc config/.vimrc config/.gitconfig config/.ctags config/ssh_config config/.gitignore_global"
+d1="$HOME/.bashrc $HOME/.vimrc $HOME/.gitconfig $HOME/.ctags $HOME/.ssh/config $HOME/.gitignore_global"
 
 linkDestinationsToSources() {
 		if [[ -z $1 || -z $2 ]]

@@ -8,6 +8,7 @@
 	bare = false
 	logallrefupdates = true
 	autocrlf = false
+	excludesfile = ~/.gitignore_global
 [color]
 	status = auto
 	diff = auto
