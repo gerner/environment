@@ -49,8 +49,22 @@ if [ -n "$force_color_prompt" ]; then
     fi
 fi
 
+# Combining Lachie Cox's crazy Git branch mojo:
+#   http://spiral.smartbomb.com.au/post/31418465
+# with
+#   http://henrik.nyh.se/2008/12/git-dirty-prompt
+# AND Geoff Grosenbach's style:
+#   http://pastie.org/325104
+# Sweeeeeeeet!
+function parse_git_dirty {
+  [[ $(git status 2> /dev/null | tail -n1) != "nothing to commit (working directory clean)" ]] && echo "(*)"
+}
+function parse_git_branch {
+  git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e "s/*\(.*\)/\1$(parse_git_dirty)/"
+}
+
 if [ "$color_prompt" = yes ]; then
-    PS1='${debian_chroot:+($debian_chroot)}\[\033[00;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\] \d \t\n\[\033[00;33m\]\$\[\033[00m\] '
+    PS1='${debian_chroot:+($debian_chroot)}\[\033[00;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w$(git branch &>/dev/null; if [ $? -eq 0 ]; then export GIT_PROMPT="\[\033[1;32m\]$(parse_git_branch)"; echo $GIT_PROMPT; fi) \[\033[00m\]\d \t\n\[\033[00;33m\]\$\[\033[00m\] '
 else
     PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
 fi
