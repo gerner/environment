@@ -1,0 +1,45 @@
+#!/bin/bash
+set -e
+
+function format_h {
+    if [ -z $1 ]
+    then
+        printf %5s "0B"
+    elif [ $1 -gt $((4*1024*1024)) ]
+    then
+        printf %5s "$(($1/1024/1024))M"
+    elif [ $1 -gt 4096 ]
+    then
+        printf %5s "$(($1/1024))K"
+    else
+        printf %5s "$1B"
+    fi
+}
+
+if [ -z $1 ]
+then
+    interval=1
+else
+    interval=$1
+fi
+
+disk_before=(`cat /proc/diskstats | awk '{r+=$6;w+=$10} END {print r/4*1024,w/4*1024}'`)
+net_before=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
+
+sleep $interval
+
+disk_after=(`cat /proc/diskstats | awk '{r+=$6;w+=$10} END {print r/4*1024,w/4*1024}'`)
+net_after=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
+
+mem=(`free -b | grep Mem | awk '{print $4,$6,$7,$3}'`)
+cpu=(`vmstat | tail -n1 | awk '{print $13,$14,$15,$16}'`)
+
+batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { print $6} /Charging state/ { print $NF }'`)
+
+printf "%3s %3s %3s %3s|%5s %5s|%5s %5s|%5s %5s %5s %5s| %s %s | %s\n" \
+        ${cpu[0]} ${cpu[1]} ${cpu[2]} ${cpu[3]} \
+        $(format_h $(( ${disk_after[0]} - ${disk_before[0]} )) ) $(format_h $(( ${disk_after[1]} - ${disk_before[1]} )) )\
+        $(format_h $(( ${net_after[0]} - ${net_before[0]} )) ) $(format_h $(( ${net_after[1]} - ${net_before[1]} )) )\
+        $(format_h ${mem[0]}) $(format_h ${mem[1]}) $(format_h ${mem[2]}) $(format_h ${mem[3]})\
+        ${batt[0]} ${batt[1]} \
+        "`date +'%a %b %d %H:%M'`"
