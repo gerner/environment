@@ -1,6 +1,16 @@
 #!/bin/bash
 set -e
 
+while getopts ":x" opt; do
+    case $opt in
+        x)
+            use_xsetroot=1
+            ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
 function format_h {
     if [ -z $1 ]
     then
@@ -23,33 +33,48 @@ else
     interval=$1
 fi
 
-disk_before=(`cat /proc/diskstats | awk '{r+=$6;w+=$10} END {print r/4*1024,w/4*1024}'`)
-net_before=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
+while true; do
+        disk_before=(`cat /proc/diskstats | awk '{r+=$6;w+=$10} END {print r/4*1024,w/4*1024}'`)
+        net_before=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
 
-sleep $interval
+        sleep $interval
 
-disk_after=(`cat /proc/diskstats | awk '{r+=$6;w+=$10} END {print r/4*1024,w/4*1024}'`)
-net_after=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
+        disk_after=(`cat /proc/diskstats | awk '{r+=$6;w+=$10} END {print r/4*1024,w/4*1024}'`)
+        net_after=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
 
-mem=(`free -b | grep Mem | awk '{print $4,$6,$7,$3}'`)
-cpu=(`vmstat | tail -n1 | awk '{print $13,$14,$15,$16}'`)
+        mem=(`free -b | awk '/Mem/ {print $3-$7-$6,$6,$7,$4}'`)
+        cpu=(`vmstat | tail -n1 | awk '{print $13,$14,$15,$16}'`)
 
-batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { print $6} /Charging state/ { print $NF }'`)
+        batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { print $6} /Charging state/ { print $NF }'`)
 
-if [[ ${batt[1]} -eq "discharging" ]]
-then
-    charge="-"
-elif [[ ${batt[1]} -eq "charging" ]]
-then
-    charge="+"
-else
-    charge="="
-fi
+        ssid=`iwgetid -r` || true
+        wifiqual=`iwconfig 2> /dev/null | grep -o "Link Quality=[0-9]*" | grep -o "[0-9]*"`|| true
 
-printf "%3s %3s %3s %3s|%5s %5s|%5s %5s|%5s %5s %5s %5s| %s %s | %s\n" \
-        ${cpu[0]} ${cpu[1]} ${cpu[2]} ${cpu[3]} \
-        $(format_h $(( ${disk_after[0]} - ${disk_before[0]} )) ) $(format_h $(( ${disk_after[1]} - ${disk_before[1]} )) )\
-        $(format_h $(( ${net_after[0]} - ${net_before[0]} )) ) $(format_h $(( ${net_after[1]} - ${net_before[1]} )) )\
-        $(format_h ${mem[0]}) $(format_h ${mem[1]}) $(format_h ${mem[2]}) $(format_h ${mem[3]})\
-        ${batt[0]} ${charge} \
-        "`date +'%a %b %d %H:%M'`"
+        if [[ ${batt[1]} -eq "discharging" ]]
+        then
+            charge="-"
+        elif [[ ${batt[1]} -eq "charging" ]]
+        then
+            charge="+"
+        else
+            charge="="
+        fi
+
+        statusline=$( if [ ! -z $ssid ]
+        then
+            printf "%s %3s%%|" $ssid $wifiqual
+        fi
+            printf "%2s %2s %2s %2s|%5s %5s|%5s %5s|%5s %5s %5s %5s| %s %s| %s" \
+                ${cpu[0]} ${cpu[1]} ${cpu[2]} ${cpu[3]} \
+                $(format_h $(( ${disk_after[0]} - ${disk_before[0]} )) ) $(format_h $(( ${disk_after[1]} - ${disk_before[1]} )) )\
+                $(format_h $(( ${net_after[0]} - ${net_before[0]} )) ) $(format_h $(( ${net_after[1]} - ${net_before[1]} )) )\
+                $(format_h ${mem[0]}) $(format_h ${mem[1]}) $(format_h ${mem[2]}) $(format_h ${mem[3]})\
+                ${batt[0]} ${charge} \
+                "`date +'%a %b %d %H:%M'`" )
+        
+        if [ -z $use_xsetroot ]; then
+            printf "%s\n" "$statusline"
+        else
+            xsetroot -name "$statusline"
+        fi
+done
