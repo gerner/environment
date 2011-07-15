@@ -50,10 +50,10 @@ while true; do
         ssid=`iwgetid -r` || true
         wifiqual=`iwconfig 2> /dev/null | grep -o "Link Quality=[0-9]*" | grep -o "[0-9]*"`|| true
 
-        if [[ ${batt[1]} -eq "discharging" ]]
+        if [ "${batt[1]}" == "discharging" ]
         then
             charge="-"
-        elif [[ ${batt[1]} -eq "charging" ]]
+        elif [ ${batt[1]} == "charging" ]
         then
             charge="+"
         else
