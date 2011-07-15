@@ -36,10 +36,20 @@ cpu=(`vmstat | tail -n1 | awk '{print $13,$14,$15,$16}'`)
 
 batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { print $6} /Charging state/ { print $NF }'`)
 
+if [[ ${batt[1]} -eq "discharging" ]]
+then
+    charge="-"
+elif [[ ${batt[1]} -eq "charging" ]]
+then
+    charge="+"
+else
+    charge="="
+fi
+
 printf "%3s %3s %3s %3s|%5s %5s|%5s %5s|%5s %5s %5s %5s| %s %s | %s\n" \
         ${cpu[0]} ${cpu[1]} ${cpu[2]} ${cpu[3]} \
         $(format_h $(( ${disk_after[0]} - ${disk_before[0]} )) ) $(format_h $(( ${disk_after[1]} - ${disk_before[1]} )) )\
         $(format_h $(( ${net_after[0]} - ${net_before[0]} )) ) $(format_h $(( ${net_after[1]} - ${net_before[1]} )) )\
         $(format_h ${mem[0]}) $(format_h ${mem[1]}) $(format_h ${mem[2]}) $(format_h ${mem[3]})\
-        ${batt[0]} ${batt[1]} \
+        ${batt[0]} ${charge} \
         "`date +'%a %b %d %H:%M'`"
