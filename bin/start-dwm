@@ -1,6 +1,9 @@
 #!/bin/bash
 
+# run xscreensaver to run so that locking the screen on sleep will work properly (part of acpi)
+xscreensaver &
+
 # this is my little status daemon
 start-stop-daemon --start -p /tmp/statusbar.pid -b -m -x /home/nick/bin/statusbar -- -x 3
 
-/usr/local/bin/dwm
+/usr/local/bin/dwm 2>> /tmp/dwmlog
