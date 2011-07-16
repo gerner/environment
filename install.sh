@@ -2,10 +2,11 @@
 set -e
 #set -x
 
-s1="config/.bashrc config/.vimrc config/.gitconfig config/.ctags config/ssh_config config/.gitignore_global"
-d1="$HOME/.bashrc $HOME/.vimrc $HOME/.gitconfig $HOME/.ctags $HOME/.ssh/config $HOME/.gitignore_global"
+s1="config/.bashrc config/.vimrc config/.gitconfig config/.ctags config/ssh_config config/.gitignore_global config/.xscreensaver"
+d1="$HOME/.bashrc $HOME/.vimrc $HOME/.gitconfig $HOME/.ctags $HOME/.ssh/config $HOME/.gitignore_global $HOME/.xscreensaver"
 
 linkDestinationsToSources() {
+        warning=
 		if [[ -z $1 || -z $2 ]]
 		then
 			echo "need sources destinations! s: $1 d: $2"
@@ -32,6 +33,7 @@ linkDestinationsToSources() {
 			if [ ! -e $s ]
 			then
 				echo "UH OH, no file $s in environment! skipping..."
+                warning=1
 				continue
 			fi
 			d=${destinations[$i]}
@@ -40,7 +42,9 @@ linkDestinationsToSources() {
 			then 
 				if [ $d -ef $s ]
 				then echo " already linked to environment"
-				else echo " already exists! skipping. just rm it and run this again."
+				else
+                    echo " already exists! skipping. just rm it and run this again."
+                    warning=1
 				fi
 			else
 				ln -s $s $d
@@ -52,6 +56,8 @@ linkDestinationsToSources() {
 #first link the configs
 echo "linking configs..."
 linkDestinationsToSources "$s1" "$d1"
+
+if [ ! -z "$warning" ]; then echo ""; echo "There are warnings above!"; fi
 
 #then link the executables to ~/bin
 
@@ -76,5 +82,7 @@ for ((i=0; i<count; i+=1))
 do
 	d="$d $HOME/${s_array[$i]}"
 done
+echo ""
 echo "linking binaries..."
 linkDestinationsToSources "$s" "$d"
+if [ ! -z "$warning" ]; then echo ""; echo "There are warnings above!"; fi
