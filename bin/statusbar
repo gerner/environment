@@ -1,29 +1,67 @@
 #!/bin/bash
 set -e
 
-while getopts ":x" opt; do
-    case $opt in
-        x)
-            use_xsetroot=1
+SCRIPTNAME=$0
+set -- `getopt -n$0 -u -a --longoptions="start stop" "xc" "$@"`
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        --start) 
+            shift
+            echo "starting $SCRIPTNAME $@"
+            start-stop-daemon --start -p /tmp/statusbar.pid -b -m -x $SCRIPTNAME -- `echo $@ | sed 's/ -- / /'`
+            exit $?
             ;;
+        --stop)
+            start-stop-daemon --stop -p /tmp/statusbar.pid
+            exit $?
+            ;;
+        -x) use_xsetroot=1;;
+        -c) use_colors=1;;
+        --) shift;break;;
     esac
+    shift
 done
 
-shift $((OPTIND-1))
+function get_c {
+    if [ -z $use_colors ]; then
+        true
+    elif [ -z "$1" ] || [ -z "$2" ]; then
+        echo "\\x01"
+    else
+        num=$1
+        dir=$2
+        i=1
+        shift
+        shift
+        until [ -z "$1" ] || [ ${num/.*} $dir $1 ]; do
+            shift
+            i=$(($i+1))
+        done
+        echo "\\x0$i"
+    fi
+}
+
+function format_n {
+    echo $@ >> /tmp/junk
+    printf "$(get_c $@)%2s$(get_c)" $1
+}
 
 function format_h {
-    if [ -z $1 ]
-    then
-        printf %5s "0B"
-    elif [ $1 -gt $((4*1024*1024)) ]
-    then
-        printf %5s "$(($1/1024/1024))M"
-    elif [ $1 -gt 4096 ]
-    then
-        printf %5s "$(($1/1024))K"
+    if [ -z $1 ]; then
+        num_str="0"
+    elif [ $1 -ge $((4*1024*1024)) ]; then
+        num_str="$(($1/1024/1024))"
+        unit=M
+    elif [ $1 -ge 4096 ]; then
+        num_str="$(($1/1024))"
+        unit=K
     else
-        printf %5s "$1B"
+        num_str="$1"
+        unit=B
     fi
+
+    printf "$(get_c $@)%4s$(get_c)%1s" $num_str $unit
 }
 
 if [ -z $1 ]
@@ -32,20 +70,26 @@ then
 else
     interval=$1
 fi
-
 while true; do
         disk_before=(`cat /proc/diskstats | awk '{r+=$6;w+=$10} END {print r/4*1024,w/4*1024}'`)
         net_before=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
+        cpu_before=(`cat /proc/stat | head -n1`)
 
         sleep $interval
 
         disk_after=(`cat /proc/diskstats | awk '{r+=$6;w+=$10} END {print r/4*1024,w/4*1024}'`)
         net_after=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
+        cpu_after=(`cat /proc/stat | head -n1`)
 
         mem=(`free -b | awk '/Mem/ {print $3-$7-$6,$6,$7,$4}'`)
-        cpu=(`vmstat | tail -n1 | awk '{print $13,$14,$15,$16}'`)
+        #cpu=(`vmstat | tail -n1 | awk '{print $13,$14,$15,$16}'`)
+        cpu_usr=$(( (${cpu_after[1]} - ${cpu_before[1]}) + (${cpu_after[2]} - ${cpu_before[2]})))
+        cpu_sys=$(( ${cpu_after[3]} - ${cpu_before[3]} ))
+        cpu_idle=$(( ${cpu_after[4]} - ${cpu_before[4]} ))
+        cpu_io=$(( ${cpu_after[5]} - ${cpu_before[5]} ))
+        cpu_total=$(( $cpu_usr + $cpu_sys + $cpu_idle + $cpu_io ))
 
-        batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { print $6} /Charging state/ { print $NF }'`)
+        batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { sub("%", "", $6); print $6} /Charging state/ { print $NF }'`)
 
         ssid=`iwgetid -r` || true
         wifiqual=`iwconfig 2> /dev/null | grep -o "Link Quality=[0-9]*" | grep -o "[0-9]*"`|| true
@@ -64,17 +108,25 @@ while true; do
         then
             printf "%s %3s%%|" $ssid $wifiqual
         fi
-            printf "%2s %2s %2s %2s|%5s %5s|%5s %5s|%5s %5s %5s %5s| %s %s| %s" \
-                ${cpu[0]} ${cpu[1]} ${cpu[2]} ${cpu[3]} \
-                $(format_h $(( ${disk_after[0]} - ${disk_before[0]} )) ) $(format_h $(( ${disk_after[1]} - ${disk_before[1]} )) )\
-                $(format_h $(( ${net_after[0]} - ${net_before[0]} )) ) $(format_h $(( ${net_after[1]} - ${net_before[1]} )) )\
-                $(format_h ${mem[0]}) $(format_h ${mem[1]}) $(format_h ${mem[2]}) $(format_h ${mem[3]})\
-                ${batt[0]} ${charge} \
+            printf "%s %s %s %s|%s %s|%s %s|%s %s %s %s| %s%% %s| %s" \
+                "$(format_n $(( $cpu_usr*100/$cpu_total )) -lt 5 20 60)" \
+                "$(format_n $(( $cpu_sys*100/$cpu_total )) -lt 5 20 60)" \
+                "$(format_n $(( $cpu_idle*100/$cpu_total )) -gt 100 80 50)" \
+                "$(format_n $(( $cpu_io*100/$cpu_total )) -lt 5 10 25)" \
+                "$(format_h $(( ${disk_after[0]} - ${disk_before[0]} )) -gt 4096000000 1024000 1024 1)" \
+                "$(format_h $(( ${disk_after[1]} - ${disk_before[1]} )) -gt 4096000000 1024000 1024 1)" \
+                "$(format_h $(( ${net_after[0]} - ${net_before[0]} )) -gt 4096000000 1024000 1024 1)" \
+                "$(format_h $(( ${net_after[1]} - ${net_before[1]} )) -gt 4096000000 1024000 1024 1)" \
+                "$(format_h ${mem[0]} -lt 1000000 500000000 1024000000)" \
+                "$(format_h ${mem[1]} -lt 200000000 500000000 1024000000)" \
+                "$(format_h ${mem[2]} -gt 4096000000 512000000 200000000 )" \
+                "$(format_h ${mem[3]} -gt 4096000000 800000000 400000000)" \
+                "$(format_n ${batt[0]} -gt 99 60 30)" ${charge} \
                 "`date +'%a %b %d %H:%M'`" )
         
         if [ -z $use_xsetroot ]; then
-            printf "%s\n" "$statusline"
+            echo "$statusline"
         else
-            xsetroot -name "$statusline"
+            xsetroot -name "$(echo -e "$statusline")"
         fi
 done

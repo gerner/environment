@@ -4,6 +4,6 @@
 xscreensaver &
 
 # this is my little status daemon
-start-stop-daemon --start -p /tmp/statusbar.pid -b -m -x /home/nick/bin/statusbar -- -x 3
+statusbar --start -x -c 3
 
 /usr/local/bin/dwm 2>> /tmp/dwmlog
