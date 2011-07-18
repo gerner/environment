@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-#set -x
 
 s1="config/.bashrc config/.vimrc config/.gitconfig config/.ctags config/ssh_config config/.gitignore_global config/.xscreensaver"
 d1="$HOME/.bashrc $HOME/.vimrc $HOME/.gitconfig $HOME/.ctags $HOME/.ssh/config $HOME/.gitignore_global $HOME/.xscreensaver"
@@ -37,11 +36,13 @@ linkDestinationsToSources() {
 				continue
 			fi
 			d=${destinations[$i]}
+            if [ ! -e $d ] && [ -h $d ]; then
+                rm $d
+            fi
 			echo -n "$d"
-			if [ -e $d ]
-			then 
-				if [ $d -ef $s ]
-				then echo " already linked to environment"
+			if [ -e $d ]; then 
+				if [ $d -ef $s ]; then
+                    echo " already linked to environment"
 				else
                     echo " already exists! skipping. just rm it and run this again."
                     warning=1
