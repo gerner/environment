@@ -1,24 +1,30 @@
 #!/bin/bash
+set -e
+
+# Combining Lachie Cox's crazy Git branch mojo:
+#   http://spiral.smartbomb.com.au/post/31418465
+# with
+#   http://henrik.nyh.se/2008/12/git-dirty-prompt
+# AND Geoff Grosenbach's style:
+#   http://pastie.org/325104
+# Sweeeeeeeet!
+function parse_git_dirty {
+    [[ $(git status 2> /dev/null | tail -n1) != "nothing to commit (working directory clean)" ]] && echo "(*)"
+}
+function parse_git_ahead {
+    git status | grep "Your branch is ahead" | sed "s/# Your branch is ahead of .* by \([0-9]*\) commit.*/(\1)/"
+}
+function parse_git_branch {
+    git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e "s/*\(.*\)/\1$(parse_git_dirty)$(parse_git_ahead)/"
+}
 
 for x in *
 do
 	pushd $x > /dev/null
 
-	didPWD=""
-	if ! git status | grep -q "nothing to commit (working directory clean)"; then
-		if [ -z $didPWD]; then pwd; didPWD="1"; fi
-		git status
-		echo ""
-	fi
-	
-	if grep -q "svn" .git/config ; then
-		status_svn=`git status-svn`
-		if [ "$status_svn" ]; then
-			if [ -z $didPWD]; then pwd; didPWD="1"; fi
-			echo "$status_svn"
-			echo ""
-		fi
-	fi
+    if git branch &> /dev/null; then 
+        echo $x $(parse_git_branch)
+    fi
 
 	popd > /dev/null
 done
