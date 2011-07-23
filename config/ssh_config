@@ -18,3 +18,6 @@
 # remember, other settings are provided by /etc/ssh/ssh_config
 Host *
     ServerAliveInterval 5
+
+Host dev.sewichi.com
+    IdentityFile /home/nick/sewichi/ec2-keypair.pem
