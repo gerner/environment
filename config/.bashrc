@@ -119,6 +119,10 @@ export PATH=$PATH:/usr/lib/jvm/java-6-sun/bin:/home/nick/downloads/android-sdk-l
 
 export JDK_HOME=/usr/lib/jvm/java-6-sun
 export JAVA_HOME=/usr/lib/jvm/java-6-sun
+
+export M2_HOME=/usr/share/maven2
+
 export SVN_EDITOR=vim
 
 CATALINA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005 -Xmx2048m -XX:MaxPermSize=128m"
+source $HOME/sewichi/aws/aws-setup
