@@ -43,7 +43,6 @@ function get_c {
 }
 
 function format_n {
-    echo $@ >> /tmp/junk
     printf "$(get_c $@)%2s$(get_c)" $1
 }
 
