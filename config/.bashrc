@@ -117,6 +117,8 @@ fi
 
 export PATH=$PATH:/usr/lib/jvm/java-6-sun/bin:/home/nick/downloads/android-sdk-linux_86/tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin
 
+export EDITOR=vim
+
 export JDK_HOME=/usr/lib/jvm/java-6-sun
 export JAVA_HOME=/usr/lib/jvm/java-6-sun
 
