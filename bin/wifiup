@@ -1,15 +1,24 @@
 #!/bin/bash
 set -e
 
-sudo ifdown eth0
-sudo wpa_action wlan0 stop
+if [ -t 1 ]; then
+    SUDO=sudo
+elif [ ! -z "$DISPLAY" ]; then
+    SUDO=gksudo
+else
+    echo "not on tty or in X!" 
+    return 1
+fi
+
+$SUDO ifdown eth0
+$SUDO wpa_action wlan0 stop
 sleep 2
 
-sudo /etc/init.d/network-manager stop || true
-sudo killall dhclient || true
-sudo killall wpa_supplicant || true
+$SUDO /etc/init.d/network-manager stop || true
+$SUDO killall dhclient || true
+$SUDO killall wpa_supplicant || true
 
-sudo ifup wlan0
+$SUDO ifup wlan0
 sleep 2
 iwconfig wlan0
 ifconfig wlan0
