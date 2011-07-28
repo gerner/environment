@@ -20,4 +20,4 @@ Host *
     ServerAliveInterval 5
 
 Host dev.sewichi.com
-    IdentityFile /home/nick/sewichi/ec2-keypair.pem
+    IdentityFile /home/nick/sewichi/aws/ec2-keypair.pem
