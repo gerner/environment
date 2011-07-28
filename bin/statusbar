@@ -70,13 +70,13 @@ else
     interval=$1
 fi
 while true; do
-        disk_before=(`cat /proc/diskstats | awk '{r+=$6;w+=$10} END {print r/4*1024,w/4*1024}'`)
+    disk_before=(`cat /proc/diskstats | awk '{ if($2==0) { r+=$6;w+=$10 } } END {print r/4*1024,w/4*1024}'`)
         net_before=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
         cpu_before=(`cat /proc/stat | head -n1`)
 
         sleep $interval
 
-        disk_after=(`cat /proc/diskstats | awk '{r+=$6;w+=$10} END {print r/4*1024,w/4*1024}'`)
+        disk_after=(`cat /proc/diskstats | awk '{ if($2==0) { r+=$6;w+=$10 } } END {print r/4*1024,w/4*1024}'`)
         net_after=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
         cpu_after=(`cat /proc/stat | head -n1`)
 
