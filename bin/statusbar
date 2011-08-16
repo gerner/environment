@@ -112,10 +112,10 @@ while true; do
                 "$(format_n $(( $cpu_sys*100/$cpu_total )) -lt 5 20 60)" \
                 "$(format_n $(( $cpu_idle*100/$cpu_total )) -gt 100 80 50)" \
                 "$(format_n $(( $cpu_io*100/$cpu_total )) -lt 5 10 25)" \
-                "$(format_h $(( ${disk_after[0]} - ${disk_before[0]} )) -gt 4096000000 1024000 1024 1)" \
-                "$(format_h $(( ${disk_after[1]} - ${disk_before[1]} )) -gt 4096000000 1024000 1024 1)" \
-                "$(format_h $(( ${net_after[0]} - ${net_before[0]} )) -gt 4096000000 1024000 1024 1)" \
-                "$(format_h $(( ${net_after[1]} - ${net_before[1]} )) -gt 4096000000 1024000 1024 1)" \
+                "$(format_h $(( (${disk_after[0]} - ${disk_before[0]})/$interval )) -gt 4096000000 1024000 1024 1)" \
+                "$(format_h $(( (${disk_after[1]} - ${disk_before[1]})/$interval )) -gt 4096000000 1024000 1024 1)" \
+                "$(format_h $(( (${net_after[0]} - ${net_before[0]})/$interval )) -gt 4096000000 1024000 1024 1)" \
+                "$(format_h $(( (${net_after[1]} - ${net_before[1]})/$interval )) -gt 4096000000 1024000 1024 1)" \
                 "$(format_h ${mem[0]} -lt 1000000 500000000 1024000000)" \
                 "$(format_h ${mem[1]} -lt 200000000 500000000 1024000000)" \
                 "$(format_h ${mem[2]} -gt 4096000000 512000000 200000000 )" \
