@@ -115,7 +115,6 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 
-export PATH=$PATH:/usr/lib/jvm/java-6-sun/bin:/home/nick/downloads/android-sdk-linux_86/tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin
 
 export EDITOR=vim
 
@@ -128,3 +127,7 @@ export SVN_EDITOR=vim
 
 CATALINA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005 -Xmx2048m -XX:MaxPermSize=128m"
 source $HOME/sewichi/aws/aws-setup
+
+ANDROID_HOME=/home/nick/downloads/android-sdk-linux_x86
+
+export PATH=$PATH:/usr/lib/jvm/java-6-sun/bin:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin
