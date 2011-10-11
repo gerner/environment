@@ -129,5 +129,6 @@ CATALINA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=
 source $HOME/sewichi/aws/aws-setup
 
 ANDROID_HOME=/home/nick/downloads/android-sdk-linux_x86
+HADOOP_HOME=/home/nick/downloads/hadoop
 
-export PATH=$PATH:/usr/lib/jvm/java-6-sun/bin:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin
+export PATH=$PATH:/usr/lib/jvm/java-6-sun/bin:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin:$HADOOP_HOME/bin
