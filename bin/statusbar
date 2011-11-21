@@ -119,7 +119,7 @@ while true; do
             "$(format_h $(( (${disk_after[1]} - ${disk_before[1]})/$interval )) -gt 4096000000 1024000 1024 1)" \
             "$(format_h $(( (${net_after[0]} - ${net_before[0]})/$interval )) -gt 4096000000 1024000 1024 1)" \
             "$(format_h $(( (${net_after[1]} - ${net_before[1]})/$interval )) -gt 4096000000 1024000 1024 1)" \
-            "$(format_h ${mem[0]} -lt 1000000 536870912 1610612736)" \
+            "$(format_h ${mem[0]} -lt 1000000 1073741824 1610612736)" \
             "$(format_h ${mem[1]} -lt 200000000 500000000 1024000000)" \
             "$(format_h ${mem[2]} -gt 4096000000 512000000 200000000 )" \
             "$(format_h ${mem[3]} -gt 4096000000 800000000 400000000)" \
