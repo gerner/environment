@@ -60,10 +60,13 @@ function parse_git_dirty {
     [[ $(git status 2> /dev/null | tail -n1) != "nothing to commit (working directory clean)" ]] && echo "(*)"
 }
 function parse_git_ahead {
-    git status | grep "Your branch is ahead" | sed "s/# Your branch is ahead of .* by \([0-9]*\) commit.*/(\1)/"
+    git status | grep "Your branch is ahead" | sed "s/# Your branch is ahead of .* by \([0-9]*\) commit.*/(\+\1)/"
+}
+function parse_git_behind {
+    git status | grep "Your branch is behind" | sed "s/# Your branch is behind .* by \([0-9]*\) commits.*/(\-\1)/"
 }
 function parse_git_branch {
-    git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e "s/*\(.*\)/\1$(parse_git_dirty)$(parse_git_ahead)/"
+    git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e "s/*\(.*\)/\1$(parse_git_dirty)$(parse_git_ahead)$(parse_git_behind)/"
 }
 
 if [ "$color_prompt" = yes ]; then
@@ -130,5 +133,7 @@ source $HOME/sewichi/aws/aws-setup
 
 export ANDROID_HOME=/home/nick/downloads/android-sdk-linux_x86
 export HADOOP_HOME=/home/nick/downloads/hadoop
+export M2_HOME=/home/nick/downloads/maven
 
-export PATH=$PATH:/usr/lib/jvm/java-6-sun/bin:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin:$HADOOP_HOME/bin
+export PATH=$M2_HOME/bin:$PATH:/usr/lib/jvm/java-6-sun/bin:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin:$HADOOP_HOME/bin
+export MAVEN_OPTS="-Xmx1024M -XX:MaxPermSize=512M"
