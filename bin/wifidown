@@ -14,6 +14,7 @@ $SUDO ifdown eth0
 $SUDO wpa_action wlan0 stop || true
 sleep 2
 $SUDO killall dhclient || true
+$SUDO killall dhclient3 || true
 $SUDO ifup eth0
 sleep 2
 ifconfig eth0

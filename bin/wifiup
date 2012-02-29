@@ -16,6 +16,7 @@ sleep 2
 
 $SUDO /etc/init.d/network-manager stop || true
 $SUDO killall dhclient || true
+$SUDO killall dhclient3 || true
 $SUDO killall wpa_supplicant || true
 
 $SUDO ifup wlan0
