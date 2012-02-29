@@ -17,3 +17,7 @@ set shiftwidth=4
 set expandtab
 set mouse=a
 set nofoldenable
+
+execute 'set listchars+=tab:\-' . nr2char(187)
+execute 'set listchars+=eol:' . nr2char(183)
+set list
