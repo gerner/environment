@@ -9,7 +9,7 @@
 	logallrefupdates = true
 	autocrlf = false
 	excludesfile = ~/.gitignore_global
-	whitespace = tab-in-indent
+	whitespace = tab-in-indent,tabwidth=4
 [color]
 	status = auto
 	diff = auto
