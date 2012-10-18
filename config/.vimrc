@@ -20,4 +20,6 @@ set nofoldenable
 
 execute 'set listchars+=tab:\-' . nr2char(187)
 execute 'set listchars+=eol:' . nr2char(183)
+execute 'set listchars+=trail:+'
 set list
+
