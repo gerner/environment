@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+set -x
+
+GFM_PREVIEW=/home/nick/downloads/Docter/bin/github-flavored-markdown.rb
+
+PREVIEW_HTML=`mktemp`.html
+
+if [ -z "$1" ]; then
+    cat - | $GFM_PREVIEW > $PREVIEW_HTML
+else
+    cat $1 | $GFM_PREVIEW > $PREVIEW_HTML
+fi
+/opt/google/chrome/chrome --app=file://$PREVIEW_HTML
+echo chrome pid: $?
+rm $PREVIEW_HTML

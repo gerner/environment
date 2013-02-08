@@ -101,6 +101,7 @@ fi
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -Alrt'
+alias hist="git log --pretty=format:'%Cgreen%h %C(yellow)%an %Cblue%ad %Creset%s %d' --graph --date=short"
 
 # Alias definitions.
 # You may want to put all your additions into a separate file like
