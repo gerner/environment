@@ -13,8 +13,8 @@ HISTCONTROL=ignoredups:ignorespace
 shopt -s histappend
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+HISTSIZE=3000
+HISTFILESIZE=30000
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -122,19 +122,21 @@ fi
 
 export EDITOR=vim
 
-export JDK_HOME=/usr/lib/jvm/java-6-sun
-export JAVA_HOME=/usr/lib/jvm/java-6-sun
+export JDK_HOME=/usr/lib/jvm/java-6-oracle
+export JAVA_HOME=/usr/lib/jvm/java-6-oracle
 
-export M2_HOME=/usr/share/maven2
+#export M2_HOME=/usr/share/maven2
+export M3_HOME=/usr/share/maven
 
 export SVN_EDITOR=vim
 
 CATALINA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005 -Xmx2048m -XX:MaxPermSize=128m"
-source $HOME/sewichi/aws/aws-setup
+if [ -e $HOME/sewichi/aws/aws-setup ]; then
+    source $HOME/sewichi/aws/aws-setup
+fi
 
 export ANDROID_HOME=/home/nick/downloads/android-sdk-linux_x86
-export HADOOP_HOME=/home/nick/downloads/hadoop
-export M2_HOME=/home/nick/downloads/maven
+export HADOOP_PREFIX=/home/nick/downloads/hadoop
 
-export PATH=$M2_HOME/bin:$PATH:/usr/lib/jvm/java-6-sun/bin:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin:$HADOOP_HOME/bin
-export MAVEN_OPTS="-Xmx1024M -XX:MaxPermSize=512M"
+export PATH=$M3_HOME/bin:$M2_HOME/bin:$PATH:/usr/lib/jvm/java-6-oracle/bin:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin:$HADOOP_PREFIX/bin:/home/nick/downloads/stat/bin
+export MAVEN_OPTS="-XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Xmx1024M -XX:MaxPermSize=512M"
