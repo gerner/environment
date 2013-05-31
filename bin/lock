@@ -1,0 +1,5 @@
+#!/bin/bash
+
+if pidof xscreensaver > /dev/null; then
+    xscreensaver-command -lock
+fi
