@@ -70,6 +70,8 @@ else
     interval=$1
 fi
 while true; do
+    cpu_freq=`cat /proc/cpuinfo | grep "cpu MHz" | awk '{s+=$NF;n+=1} END {print s/n}'`
+
     disk_before=(`cat /proc/diskstats | awk '{ if($2==0) { r+=$6;w+=$10 } } END {print r/4*1024,w/4*1024}'`)
     net_before=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
     cpu_before=(`cat /proc/stat | head -n1`)
@@ -110,7 +112,8 @@ while true; do
     elif [ ! -z "$ipaddr" ]; then
         printf "%s %s|" $ipaddr
     fi
-        printf "%s %s %s %s|%s %s|%s %s|%s %s %s %s| %s%% %s| %s" \
+        printf "%sMHz|%s %s %s %s|%s %s|%s %s|%s %s %s %s| %s%% %s| %s" \
+            "$(format_n $cpu_freq -gt 1600 1200 1000)" \
             "$(format_n $(( $cpu_usr*100/$cpu_total )) -lt 5 20 60)" \
             "$(format_n $(( $cpu_sys*100/$cpu_total )) -lt 5 20 60)" \
             "$(format_n $(( $cpu_idle*100/$cpu_total )) -gt 100 80 50)" \
@@ -125,7 +128,11 @@ while true; do
             "$(format_h ${mem[3]} -gt 4096000000 800000000 400000000)" \
             "$(format_n ${batt[0]} -gt 99 60 30)" ${charge} \
             "`date +'%a %b %d %H:%M'`" )
-    
+
+    if [ "${batt[0]/.*}" -lt 5 ] && [ "${batt[1]}" != "charging" ]; then
+        statusline="\x04XXXXXXXXXXXXXX--------------BATTERY ${batt[0]} CRITICAL----------------XXXXXXXXXXXXXX\x01"
+    fi
+
     if [ -z $use_xsetroot ]; then
         echo "$statusline"
     else
