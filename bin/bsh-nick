@@ -1,0 +1,32 @@
+#!/bin/bash
+set -e
+
+params=""
+if [ -e .classes ] 
+then
+	params=`echo $params -f .classes`
+else
+	echo "warning: .classes does not exist"
+fi
+
+if [ -e .classes-dependencies ]
+then
+	params=`echo $params -f .classes-dependencies`
+else
+	echo "warning: .classes-dependencies does not exist"
+fi
+
+CLASSPATH=$CLASSPATH:/home/nick/downloads/bsh.jar
+
+if [ -e pom.xml ]; then
+    CLASSPATH=$CLASSPATH:`find -name *.jar | grep 'target/[^/]*\.jar' | tr '\n' ':'`
+fi
+
+bshParams=""
+while [ "$1" != "" ]; do
+	bshParams=`echo $bshParams $1`
+	shift
+done
+
+rlwrap -b\"\" $params java -cp $CLASSPATH bsh.Interpreter $bshParams
+
