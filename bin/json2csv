@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+require 'oj'
+
+j = Oj::load(STDIN.read)
+
+j.each do |o|
+  puts o.values.join "\t"
+end
