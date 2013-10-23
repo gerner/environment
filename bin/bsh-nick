@@ -28,5 +28,7 @@ while [ "$1" != "" ]; do
 	shift
 done
 
+echo $CLASSPATH
+
 rlwrap -b\"\" $params java -cp $CLASSPATH bsh.Interpreter $bshParams
 
