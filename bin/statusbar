@@ -46,6 +46,12 @@ function format_n {
     printf "$(get_c $@)%2s$(get_c)" $1
 }
 
+function format_n_long {
+    padding=$1
+    shift
+    printf "$(get_c $@)%${padding}s$(get_c)" $1
+}
+
 function format_h {
     if [ -z $1 ]; then
         num_str="0"
@@ -70,7 +76,7 @@ else
     interval=$1
 fi
 while true; do
-    cpu_freq=`cat /proc/cpuinfo | grep "cpu MHz" | awk '{s+=$NF;n+=1} END {print s/n}'`
+    cpu_freq=`cat /proc/cpuinfo | grep "cpu MHz" | awk '{s+=$NF;n+=1} END {print int(s/n)}'`
 
     disk_before=(`cat /proc/diskstats | awk '{ if($2==0) { r+=$6;w+=$10 } } END {print r/4*1024,w/4*1024}'`)
     net_before=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
@@ -113,7 +119,7 @@ while true; do
         printf "%s %s|" $ipaddr
     fi
         printf "%sMHz|%s %s %s %s|%s %s|%s %s|%s %s %s %s| %s%% %s| %s" \
-            "$(format_n $cpu_freq -gt 1600 1200 1000)" \
+            "$(format_n_long 4 $cpu_freq -gt 1600 1200 1000)" \
             "$(format_n $(( $cpu_usr*100/$cpu_total )) -lt 5 20 60)" \
             "$(format_n $(( $cpu_sys*100/$cpu_total )) -lt 5 20 60)" \
             "$(format_n $(( $cpu_idle*100/$cpu_total )) -gt 100 80 50)" \
