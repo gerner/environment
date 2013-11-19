@@ -21,6 +21,7 @@ set expandtab
 set mouse=a
 set nofoldenable
 
+" make various whitespace conditions visible
 execute 'set listchars+=tab:\-' . nr2char(187)
 execute 'set listchars+=eol:' . nr2char(183)
 execute 'set listchars+=trail:+'
