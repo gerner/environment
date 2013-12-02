@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+BATTERY_CRITICAL_THRESHOLD=10
+
 SCRIPTNAME=$0
 set -- `getopt -n$0 -u -a --longoptions="start stop" "xc" "$@"`
 
@@ -135,8 +137,13 @@ while true; do
             "$(format_n ${batt[0]} -gt 99 60 30)" ${charge} \
             "`date +'%a %b %d %H:%M'`" )
 
-    if [ "${batt[0]/.*}" -lt 5 ] && [ "${batt[1]}" != "charging" ]; then
-        statusline="\x04XXXXXXXXXXXXXX--------------BATTERY ${batt[0]} CRITICAL----------------XXXXXXXXXXXXXX\x01"
+    if [ "${batt[0]/.*}" -lt "$BATTERY_CRITICAL_THRESHOLD" ] && [ "${batt[1]}" != "charging" ]; then
+        if [ "0" -eq "$battery_critical" ]; then
+            statusline="\x04XXXXXXXXXXXXXX--------------BATTERY ${batt[0]} CRITICAL----------------XXXXXXXXXXXXXX\x01"
+            battery_critical=1
+        else
+            battery_critical=0
+        fi
     fi
 
     if [ -z $use_xsetroot ]; then
