@@ -1,0 +1,42 @@
+#!/bin/bash
+set -e
+
+BATTERY_CRITICAL_THRESHOLD=100
+NOTIFICATION_INTERVAL=300
+interval=1
+
+SCRIPTNAME=$0
+set -- `getopt -n$0 -u -a --longoptions="start stop" "i" "$@"`
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        --start) 
+            shift
+            echo "starting $SCRIPTNAME $@"
+            start-stop-daemon --start -p /tmp/statusbar.pid -b -m -x $SCRIPTNAME -- `echo $@ | sed 's/ -- / /'`
+            exit $?
+            ;;
+        --stop)
+            start-stop-daemon --stop -p /tmp/statusbar.pid
+            exit $?
+            ;;
+        -i)
+            shift;interval=$1;;
+        --) shift;break;;
+    esac
+    shift
+done
+
+last_battery_notification=0
+while true; do
+    batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { sub("%", "", $6); print $6} /Charging state/ { print $NF }'`)
+
+    if [ "${batt[0]/.*}" -lt "$BATTERY_CRITICAL_THRESHOLD" ] && [ "${batt[1]}" == "Discharging" ]; then
+        next_battery_notification=$((${last_battery_notification}+${NOTIFICATION_INTERVAL}))
+        if [ ${next_battery_notification} -lt `date +%s` ]; then
+            notify-send -u critical "Battery Alert" "Battery at ${batt[0]}% plug in immediately!"
+            echo "Battery at ${batt[0]}% ${batt[1]}"
+            last_battery_notification=`date +%s`
+        fi
+    fi
+done
