@@ -2,7 +2,7 @@
 
 require 'oj'
 
-j = Oj::load(STDIN.read)
+j = Oj::load(STDIN.read, bigdecimal_load: :float)
 
 j.each do |o|
   puts o.values.join "\t"
