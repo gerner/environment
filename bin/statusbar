@@ -78,7 +78,6 @@ else
     interval=$1
 fi
 while true; do
-    cpu_freq=`cat /proc/cpuinfo | grep "cpu MHz" | awk '{s+=$NF;n+=1} END {print int(s/n)}'`
 
     disk_before=(`cat /proc/diskstats | awk '{ if($2==0) { r+=$6;w+=$10 } } END {print r/4*1024,w/4*1024}'`)
     net_before=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
@@ -90,6 +89,7 @@ while true; do
     net_after=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
     cpu_after=(`cat /proc/stat | head -n1`)
 
+    cpu_freq=`cat /proc/cpuinfo | grep "cpu MHz" | awk '{s+=$NF;n+=1} END {print int(s/n)}'`
     mem=(`free -b | awk '/Mem/ {print $3-$7-$6,$6,$7,$4}'`)
     #cpu=(`vmstat | tail -n1 | awk '{print $13,$14,$15,$16}'`)
     cpu_usr=$(( (${cpu_after[1]} - ${cpu_before[1]}) + (${cpu_after[2]} - ${cpu_before[2]})))
@@ -101,7 +101,10 @@ while true; do
     batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { sub("%", "", $6); print $6} /Charging state/ { print $NF }'`)
 
     ssid=`iwgetid -r` || true
-    wifiqual=`iwconfig 2> /dev/null | grep -o "Link Quality=[0-9]*" | grep -o "[0-9]*"`|| true
+    wifiqual=`iwconfig 2> /dev/null | grep -o "Link Quality=[0-9]*/[0-9]*" | grep -o "[0-9]*/[0-9]*"` || true
+    if [ ! -z "$wifiqual" ]; then
+        wifiqual=$((100 * $wifiqual))
+    fi
     ipaddr=`cat /proc/net/arp | tail -n+2 | awk '{printf "%s\t%s",$6,$1}'`
 
     if [ "${batt[1]}" == "discharging" ]
