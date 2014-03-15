@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+f1=`mktemp`
+f2=`mktemp`
+
+unzip -l $1 | tail -n+4 | head -n-2 | awk '$1>0 {print $4}' | sort > $f1
+find $2 -type f | sed 's/^\.\///' | sort > $f2
+
+diff $f1 $f2
