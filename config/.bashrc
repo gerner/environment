@@ -139,11 +139,17 @@ export ANDROID_HOME=/home/nick/downloads/android-sdk
 export HADOOP_PREFIX=/home/nick/downloads/hadoop
 
 export PATH=$M3_HOME/bin:$M2_HOME/bin:$PATH:/usr/lib/jvm/java-6-oracle/bin:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin:$HADOOP_PREFIX/bin:/home/nick/downloads/stat/bin
-export MAVEN_OPTS="-XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Xmx1024M -XX:MaxPermSize=512M"
+export MAVEN_OPTS="-XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Xmx1024M -XX:MaxPermSize=512M -Xrunjdwp:transport=dt_socket,address=6006,server=y,suspend=n"
 
 if which ruby >/dev/null && which gem >/dev/null; then
     export PATH="$(ruby -rubygems -e 'puts Gem.user_dir')/bin:$PATH"
 fi
 
+#at Placed we use this environment var to hook into pry/pry_debug for testing
+PRY_RESCUE_ENABLED=true
+
 #it's irritating to hit tab and have ssh block for a while before you can type stuff again, so turn that off!
 complete -r ssh scp
+
+#add some neat predefined functions for bc
+export BC_ENV_ARGS=~/.bcrc

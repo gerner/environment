@@ -1,0 +1,6 @@
+pi=4*a(1)
+define arcsin(x) { return a(x / sqrt(1 - x^2)); }
+define arccos(x) { return a(sqrt(1 -x^2 )/ x); }
+define arccot(x) { return pi/2 - a(x); }
+define arcsec(x) { return a(sqrt(x^2 - 1)); }
+define arccsc(x) { return a(1/sqrt(x^2 - 1)); }
