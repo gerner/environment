@@ -6,6 +6,12 @@ xscreensaver &
 # this is my little status daemon
 statusbar --start -x -c 3
 
-feh --bg-scale ~/.background
+# set the desktop background if it exists
+if [ -e ~/.background ]; then
+    feh --bg-scale ~/.background
+fi
+
+# watch for changes in the clipboard and call dclip copy on it
+watchxclip "dclip copy" &
 
 /usr/local/bin/dwm 2>> /tmp/dwmlog

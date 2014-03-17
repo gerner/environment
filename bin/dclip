@@ -9,9 +9,11 @@ if [ "$1" == "copy" ]; then
     sel_clip=$(xclip -o)
     sel_file=$(echo -n "$sel_clip"|tr '\n' '\034')
 fi
-touch $file 
-if [ "$1" == "paste" ]; then 
-    shift 
+touch $file
+paste=false
+if [ "$1" == "paste" ]; then
+    shift
+    paste=true
     sel_file=$(cat $file | dmenu ${1+"$@"}) 
     sel_clip=$(echo -n "$sel_file"|tr '\034' '\n')
 fi
@@ -23,5 +25,9 @@ echo "$sel_file" > $file
 
 echo -n "$sel_clip" | xclip -selection primary -i
 echo -n "$sel_clip" | xclip -selection clipboard -i
- 
+
+if $paste; then
+    xdotool key shift+Insert
+fi
+
 exit 0

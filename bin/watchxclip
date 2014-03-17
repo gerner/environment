@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e
+
+DELAY=0.5
+
+buffer_checksum=`xclip -selection clipboard -o | md5sum`
+
+while true; do
+    newbuffer_checksum=`xclip -selection clipboard -o | md5sum`
+    if [ "$buffer_checksum" != "$newbuffer_checksum" ]; then
+        $1
+        buffer_checksum=$newbuffer_checksum
+    fi
+    sleep $DELAY
+done
