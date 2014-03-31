@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+
+require 'set'
+
+#assume file is sorted rows, columns
+file=ARGV[0]
+
+rows=ARGV[1].split(",").map { |v| v.to_i }
+columns=ARGV[2].split(",").map { |v| v.to_i }
+
+column_headers = Set.new
+
+#first get the column headers
+File.open(file).each_line do |line|
+  parts = line.strip().split("\t")
+  column = []
+  columns.each { |i| column << parts[i] }
+  column_headers.add(column)
+end
+
+puts "#{([""]*rows.size).join("\t")}\t#{column_headers.map { |v| v.join(":") }.join("\t")}"
+
+def print_row row, column, column_headers
+  puts "#{row.join("\t")}\t#{column_headers.map { |c| (column.include?(c))?1:0 }.join("\t") }"
+end
+
+last_row = nil
+row_columns = Set.new
+File.open(file).each_line do |line|
+  parts = line.strip().split("\t")
+  row = []
+  rows.each { |i| row << parts[i] }
+  if(last_row && last_row != row)
+    print_row last_row, row_columns, column_headers
+    row_columns = Set.new
+  end
+  last_row = row
+
+  column = []
+  columns.each { |i| column << parts[i] }
+  row_columns.add(column)
+end
+
+print_row last_row, row_columns, column_headers if last_row
