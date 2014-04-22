@@ -1,44 +1,65 @@
 #!/usr/bin/env ruby
 
+require 'csv'
 require 'set'
+require 'awesome_print'
 
 #assume file is sorted rows, columns
 file=ARGV[0]
+has_headers = true
 
 rows=ARGV[1].split(",").map { |v| v.to_i }
 columns=ARGV[2].split(",").map { |v| v.to_i }
+numericals = ARGV[3].split(",").map { |v| v.to_i }
 
 column_headers = Set.new
 
 #first get the column headers
-File.open(file).each_line do |line|
-  parts = line.strip().split("\t")
+CSV.foreach(file, headers: has_headers) do |parts|
   column = []
-  columns.each { |i| column << parts[i] }
+  columns.each { |i| column << (numericals.include?(i) ? parts[i].to_i : parts[i]) }
   column_headers.add(column)
 end
 
-puts "#{([""]*rows.size).join("\t")}\t#{column_headers.map { |v| v.join(":") }.join("\t")}"
+column_header_counts = []
+(0...columns.length).each { |i| column_header_counts << Hash.new(0) }
+column_header_counts
+column_headers.each do |c|
+  (0...columns.length).each do |i|
+    column_header_counts[i][c[0..i]] += 1
+  end
+end
 
-def print_row row, column, column_headers
-  puts "#{row.join("\t")}\t#{column_headers.map { |c| (column.include?(c))?1:0 }.join("\t") }"
+csv_output = CSV.new(STDOUT, col_sep: "\t")
+
+expected_column_count = nil
+column_header_counts.each do |column_headers|
+  r_headers = [""]*rows.size
+  c_headers = column_headers.keys.sort.map { |k| [k.last()]*column_headers[k] }.flatten
+  column_count = column_headers.values.reduce(0) { |acc, v| acc+v }
+  expected_column_count = column_count unless expected_column_count
+  exit 1 unless expected_column_count == column_count
+  csv_output << r_headers+c_headers
+end
+
+def print_row csv_output, row, column, column_headers
+  csv_output << row + column_headers.sort.map { |c| (column.include?(c))?1:0 }
 end
 
 last_row = nil
 row_columns = Set.new
-File.open(file).each_line do |line|
-  parts = line.strip().split("\t")
+CSV.foreach(file, headers: has_headers) do |parts|
   row = []
   rows.each { |i| row << parts[i] }
   if(last_row && last_row != row)
-    print_row last_row, row_columns, column_headers
+    print_row csv_output, last_row, row_columns, column_headers
     row_columns = Set.new
   end
   last_row = row
 
   column = []
-  columns.each { |i| column << parts[i] }
+  columns.each { |i| column << (numericals.include?(i) ? parts[i].to_i : parts[i]) }
   row_columns.add(column)
 end
 
-print_row last_row, row_columns, column_headers if last_row
+print_row csv_output, last_row, row_columns, column_headers if last_row
