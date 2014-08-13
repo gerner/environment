@@ -2,8 +2,43 @@
 
 require 'oj'
 
-j = Oj::load(STDIN.read, bigdecimal_load: :float)
-
-j.each do |o|
-  puts o.values.join "\t"
+def descend_path(j, p)
+  p.split('.').each do |k|
+    raise "no key #{k} found in input" unless j[k]
+    j = j[k]
+  end
+  if j.kind_of? Array
+    return j
+  else
+    return [j]
+  end
 end
+
+def header_fields(j)
+  @header_fields ||= j.first.keys
+end
+
+def print_row(j)
+  puts header_fields(j).map { |h| j[h] }.join("\t")
+end
+
+def print_rows(rows)
+  rows.each do |j|
+    print_row(j)
+  end
+end
+
+input_object = Oj::load(STDIN.read, bigdecimal_load: :float)
+
+
+if ARGV.length > 0
+  puts header_fields(descend_path(input_object, ARGV[0])).join("\t")
+  ARGV.each do |p|
+    j = descend_path(input_object, p)
+    print_rows(j)
+  end
+else
+  puts header_fields(input_object).join("\t")
+  print_rows(input_object)
+end
+
