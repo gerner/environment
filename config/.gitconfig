@@ -20,3 +20,6 @@
 
 [push]
 	default = nothing
+
+[rebase]
+    stat=true
