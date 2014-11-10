@@ -1,9 +1,12 @@
 #!/bin/bash
 set -e
 
+echo "building ctags index..." > /dev/stderr
 #create the tags
 ctags --extra=+f+q --fields=+iaSl -f .tags -R --exclude=target .
 
+echo "building rlwrap classname index..." > /dev/stderr
 #create the list of classes for tab completion in rlwrap jdb
 find . -name *.class | sed 's/.*\/target\/[^\/]*\/\(.*\)\.class/\1/' | tr '/' '.' > .classes
 
+echo "done." > /dev/stderr
