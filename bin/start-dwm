@@ -12,6 +12,6 @@ if [ -e ~/.background ]; then
 fi
 
 # watch for changes in the clipboard and call dclip copy on it
-watchxclip "dclip copy" &
+watchxclip "dclip copy" & 2>&1 1>> /tmp/dwmlog
 
 /usr/local/bin/dwm 2>> /tmp/dwmlog
