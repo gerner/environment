@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'csv'
+
+CSV(STDIN) { |csv_in| csv_in.each { |row| puts row.join("\t") } }
