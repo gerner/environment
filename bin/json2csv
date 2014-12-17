@@ -19,7 +19,12 @@ def header_fields(j)
 end
 
 def print_row(j)
-  puts header_fields(j).map { |h| j[h] }.join("\t")
+  #puts header_fields(j).map { |h| j[h] }.join("\t")
+  non_array_cols = []
+  header_fields(j).map { |h| non_array_cols << j[h] unless j[h].kind_of? Hash }.map { |el| (el.nil?) ? "TOTAL" : el }
+  puts non_array_cols.join("\t")
+  #first_array_col = j[header_fields(j).find { |h| j[h].kind_of? Hash } ]
+  #first_array_col.keys.each { |el| puts "#{non_array_cols.join("\t")}\t#{el}" }
 end
 
 def print_rows(rows)
@@ -29,6 +34,7 @@ def print_rows(rows)
 end
 
 input_object = Oj::load(STDIN.read, bigdecimal_load: :float)
+#input_object = Oj::load(File.read('/tmp/uopapps.json'), bigdecimal_load: :float)
 
 
 if ARGV.length > 0
