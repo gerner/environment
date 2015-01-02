@@ -105,7 +105,7 @@ while true; do
     if [ ! -z "$wifiqual" ]; then
         wifiqual=$((100 * $wifiqual))
     fi
-    ipaddr=`cat /proc/net/arp | tail -n+2 | awk '{printf "%s\t%s",$6,$1}'`
+    ipaddr=`hostname  -I | cut -f1 -d' '`
 
     if [ "${batt[1]}" == "discharging" ]
     then
