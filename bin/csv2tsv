@@ -2,4 +2,4 @@
 
 require 'csv'
 
-CSV(STDIN) { |csv_in| csv_in.each { |row| puts row.join("\t") } }
+CSV(STDIN) { |csv_in| csv_in.each { |row| puts row.map {|e| e ? e.gsub("\n","\\n") : e }.join("\t") } }
