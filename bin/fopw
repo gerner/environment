@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+
+# read all the candidates
+# for each pair compute number of similar letters
+# choose word with the max sum of similar letters
+
+def likeness(k,word)
+  (k.chars.to_a.zip(word.chars.to_a).reduce(0) { |like, (a,b)| like + (a==b ? 1 : 0) })
+end
+
+def eliminating_word(word, eliminated_words)
+  eliminated_words.each do |k,v|
+    return k,-1 if word == k
+    l = likeness(k, word)
+    return k,l if l != v.to_i
+  end
+  return nil,nil
+end
+
+@eliminated_words = Hash[ARGV.map { |word| word.split(',') }]
+
+@word_scores = {}
+
+$stdin.each_line do |word|
+  word = word.strip
+
+  eliminator,l = eliminating_word(word, @eliminated_words)
+  unless eliminator.nil?
+    puts "#{word} eliminated by #{eliminator} with likeness #{l}"
+    next
+  end
+
+  @word_scores[word] = 0
+end
+
+puts "#{@word_scores.length} words left"
+
+@word_scores.keys.each do |word|
+  @word_scores.keys.each do |other_word|
+    next if word == other_word
+    @word_scores[word] += likeness(word, other_word)
+  end
+end
+
+max_score = -1
+max_word = nil
+
+@word_scores.each do |k, v|
+  if v > max_score
+    max_word = k
+    max_score = v
+  end
+end
+
+puts "#{max_word} with score #{max_score}"
