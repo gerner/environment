@@ -19,7 +19,7 @@ fi
 CLASSPATH=$CLASSPATH:/home/nick/downloads/bsh.jar
 
 if [ -e pom.xml ]; then
-    CLASSPATH=$CLASSPATH:`find -name *.jar | grep 'target/[^/]*\.jar' | tr '\n' ':'`
+    CLASSPATH=$CLASSPATH:`find -name *.jar | grep 'target/[^/]*-full\.jar' | tr '\n' ':'`
 fi
 
 bshParams=""
