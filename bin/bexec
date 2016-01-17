@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -euo pipefail
+
+BUNDLE_ROOT=$(dirname $(dirname $(bundle config path | grep -o '([^)]*)' | tr -d '()')))
+BUNDLE_PATH=$(bundle config path | grep -o '"[^"]*"$' | tr -d '"')
+BUNDLE_BIN_PATH=$(bundle config bin | grep -o '"[^"]*"$' | tr -d '"')
+
+SETUP_RB=${BUNDLE_ROOT}/${BUNDLE_PATH}/bundler/setup.rb
+BINSTUBS=${BUNDLE_ROOT}/${BUNDLE_BIN_PATH}
+
+if [[ ! -f "${SETUP_RB}" ]]; then
+    >&2 echo "${SETUP_RB} does not exist"
+    exit 1
+fi
+
+if [[ ! -x "${BINSTUBS}/$1" ]]; then
+    >&2 echo "${BINSTUBS}/$1 not executable"
+    exit 1
+fi
+
+
+ruby -r "${SETUP_RB}" ${BINSTUBS}/$1 ${@:2}
