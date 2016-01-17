@@ -3,7 +3,9 @@
 require 'oj'
 
 def descend_path(j, p)
-  p.split('.').each do |k|
+  #negative lookbehind (google it) to allow for escaped dots in the key name
+  #and also unescape them
+  p.split(/(?<!\\)\./).map { |k| k.gsub('\.', '.') }.each do |k|
     raise "no key #{k} found in input" unless j[k]
     j = j[k]
   end
@@ -15,7 +17,7 @@ def descend_path(j, p)
 end
 
 def header_fields(j)
-  @header_fields ||= j.first.keys
+  @header_fields ||= j.first.keys.sort
 end
 
 def print_row(j)
