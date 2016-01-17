@@ -100,7 +100,8 @@ alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -Alrt'
 alias hist="git log --pretty=format:'%Cgreen%h %C(yellow)%an %Cblue%ad %Creset%s %d' --graph --date=short"
-alias glist='for ref in $(git for-each-ref --sort=-committerdate --format="%(refname)" refs/heads/ ); do git log -n1 $ref --pretty=format:"%Cgreen%cr%Creset %C(yellow)%d%Creset %C(bold blue)<%an>%Creset%n" | cat ; done | awk '"'! a["'$0'"]++'"
+#alias glist='for ref in $(git for-each-ref --sort=-committerdate --format="%(refname)" refs/heads/ ); do git log -n1 $ref --pretty=format:"%Cgreen%cr%Creset %C(yellow)%d%Creset %C(bold blue)<%an>%Creset%n" | cat ; done | awk '"'! a["'$0'"]++'"
+alias glist='git for-each-ref --sort=-committerdate --format="%(color:green)%(committerdate:relative)%(color:reset) %(color:yellow)%(refname:short)%(color:reset) %(color:bold blue)<%(authorname)>%(color:reset)" refs/heads/ | head -n20'
 alias redir="> >(tee /tmp/stdout.log) 2> >(tee /tmp/stderr.log >&2)"
 
 # Alias definitions.
@@ -122,8 +123,8 @@ fi
 
 export EDITOR=vim
 
-export JDK_HOME=/usr/lib/jvm/java-6-oracle
-export JAVA_HOME=/usr/lib/jvm/java-6-oracle
+export JDK_HOME=/usr/lib/jvm/default-java
+export JAVA_HOME=/usr/lib/jvm/default-java
 
 #export M2_HOME=/usr/share/maven2
 export M3_HOME=/usr/share/maven
@@ -138,7 +139,7 @@ fi
 export ANDROID_HOME=/home/nick/downloads/android-sdk
 export HADOOP_PREFIX=/home/nick/downloads/hadoop
 
-export PATH=$M3_HOME/bin:$M2_HOME/bin:$PATH:/usr/lib/jvm/java-6-oracle/bin:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin:$HADOOP_PREFIX/bin:/home/nick/downloads/stat/bin
+export PATH=$M3_HOME/bin:$M2_HOME/bin:$PATH:/usr/lib/jvm/default-java/bin:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:/home/nick/downloads/mongodb/bin:/home/nick/bin:/home/nick/environment/bin:$HADOOP_PREFIX/bin:/home/nick/downloads/stat/bin
 export MAVEN_OPTS="-XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Xmx1024M -XX:MaxPermSize=512M" 
 #add these options to get maven debug
 # -Xrunjdwp:transport=dt_socket,address=6006,server=y,suspend=n
