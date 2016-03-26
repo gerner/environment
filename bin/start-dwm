@@ -3,6 +3,9 @@
 # run xscreensaver to run so that locking the screen on sleep will work properly (part of acpi)
 xscreensaver &
 
+#disable the touchpad
+disable-touchpad
+
 # this is my little status daemon
 statusbar --start -x -c 3
 
