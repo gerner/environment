@@ -1,13 +1,16 @@
 #!/bin/bash
 set -e
 set -o pipefail
-if ! xrandr | egrep 'HDMI1|DP1' | grep -v disconnected; then
+if ! xrandr | egrep '^HDMI|^DP' | grep -v disconnected; then
     >&2 echo "desktop not attached"
     exit 1
 fi
 xrandr --output LVDS1 --off
+xrandr --output eDP1 --off
 xrandr --output HDMI1 --auto
+xrandr --output HDMI2 --auto
 xrandr --output DP1 --auto
+xrandr --output DP2 --auto
 
 #refresh ion3, if running
 if pidof ion3; then

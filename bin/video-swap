@@ -1,9 +1,10 @@
 #!/bin/bash
 set -e
+set -x
 
-LAPTOP="LVDS1"
+LAPTOP="^LVDS1|^eDP1"
 
-if xrandr | awk '/^[^ ]/ {lastout=$0} /\*/ {print lastout}' | grep -q -v "$LAPTOP" ; then
+if xrandr | awk '/^[^ ]/ {lastout=$0} /\*/ {print lastout}' | egrep -q -v "$LAPTOP" ; then
     video-laptop
 else
     video-desktop
