@@ -1,10 +1,13 @@
 #!/bin/bash
-set -e
+set -e -u -o pipefail
 
 BATTERY_CRITICAL_THRESHOLD=10
 
 SCRIPTNAME=$0
 set -- `getopt -n$0 -u -a --longoptions="start stop" "xc" "$@"`
+
+use_colors=""
+use_xsetroot=""
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -28,7 +31,7 @@ done
 function get_c {
     if [ -z $use_colors ]; then
         true
-    elif [ -z "$1" ] || [ -z "$2" ]; then
+    elif [ $# -lt 2 ] || [ -z "$2" ]; then
         echo "\\x01"
     else
         num=$1
@@ -36,7 +39,7 @@ function get_c {
         i=1
         shift
         shift
-        until [ -z "$1" ] || [ ${num/.*} $dir $1 ]; do
+        until [ $# -eq 0 ] || [ ${num/.*} $dir $1 ]; do
             shift
             i=$(($i+1))
         done
@@ -71,7 +74,7 @@ function format_h {
     printf "$(get_c $@)%4s$(get_c)%1s" $num_str $unit
 }
 
-if [ -z $1 ]
+if [ $# -eq 0 ]
 then
     interval=1
 else
@@ -79,18 +82,18 @@ else
 fi
 while true; do
 
-    disk_before=(`cat /proc/diskstats | awk '{ if($2==0) { r+=$6;w+=$10 } } END {print r/4*1024,w/4*1024}'`)
-    net_before=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
+    disk_before=(`cat /proc/diskstats | awk '{ if($2==0) { r+=$6;w+=$10 } } END {printf("%d %d\n", r/4*1024, w/4*1024)}'`)
+    net_before=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {printf("%d %d\n", r, w)}'`)
     cpu_before=(`cat /proc/stat | head -n1`)
 
     sleep $interval
 
-    disk_after=(`cat /proc/diskstats | awk '{ if($2==0) { r+=$6;w+=$10 } } END {print r/4*1024,w/4*1024}'`)
-    net_after=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {print r,w}'`)
+    disk_after=(`cat /proc/diskstats | awk '{ if($2==0) { r+=$6;w+=$10 } } END {printf("%d %d\n", r/4*1024, w/4*1024)}'`)
+    net_after=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {printf("%d %d\n", r,w)}'`)
     cpu_after=(`cat /proc/stat | head -n1`)
 
     cpu_freq=`cat /proc/cpuinfo | grep "cpu MHz" | awk '{s+=$NF;n+=1} END {print int(s/n)}'`
-    mem=(`free -b | awk '/Mem/ {print $3-$7-$6,$6,$7,$4}'`)
+    mem=(`free -b | awk '/Mem/ {print sprintf("%d", $3-$7-$6),$6,$7,$4}'`)
     #cpu=(`vmstat | tail -n1 | awk '{print $13,$14,$15,$16}'`)
     cpu_usr=$(( (${cpu_after[1]} - ${cpu_before[1]}) + (${cpu_after[2]} - ${cpu_before[2]})))
     cpu_sys=$(( ${cpu_after[3]} - ${cpu_before[3]} ))
@@ -107,10 +110,10 @@ while true; do
     fi
     ipaddr=`hostname  -I | cut -f1 -d' '`
 
-    if [ "${batt[1]}" == "discharging" ]
+    if [ "${batt[1]}" == "Discharging" ]
     then
         charge="-"
-    elif [ ${batt[1]} == "charging" ]
+    elif [ ${batt[1]} == "Charging" ]
     then
         charge="+"
     else
@@ -140,7 +143,7 @@ while true; do
             "$(format_n ${batt[0]} -gt 99 60 30)" ${charge} \
             "`date +'%a %b %d %H:%M'`" )
 
-    if [ "${batt[0]/.*}" -lt "$BATTERY_CRITICAL_THRESHOLD" ] && [ "${batt[1]}" != "charging" ]; then
+    if [ "${batt[0]/.*}" -lt "$BATTERY_CRITICAL_THRESHOLD" ] && [ "${batt[1]}" != "Charging" ]; then
         if [ "0" -eq "$battery_critical" ]; then
             statusline="\x04XXXXXXXXXXXXXX--------------BATTERY ${batt[0]} CRITICAL----------------XXXXXXXXXXXXXX\x01"
             battery_critical=1
