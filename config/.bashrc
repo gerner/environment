@@ -168,3 +168,7 @@ export LESS="-FXR"
 #I don't know how I feel about this, but I need RVM to use different ruby
 # versions
 . ~/.rvm/scripts/rvm
+
+export PLACED_REPO_DIR=/home/nick/sewichi/src
+
+. ~/.secrets
