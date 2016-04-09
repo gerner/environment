@@ -2,6 +2,7 @@
 set -e -u -o pipefail
 
 BATTERY_CRITICAL_THRESHOLD=10
+battery_critical=0
 
 SCRIPTNAME=$0
 set -- `getopt -n$0 -u -a --longoptions="start stop" "xc" "$@"`
