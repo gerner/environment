@@ -5,8 +5,8 @@ set -o pipefail
 
 LAPTOP="^LVDS1|^eDP1"
 
-if xrandr | awk '/^[^ ]/ {lastout=$0} /\*/ {print lastout}' | egrep -q -v "$LAPTOP" ; then
-    video-laptop
-else
+if xrandr | awk '/^[^ ]/ {lastout=$0} /\*/ {print lastout}' | egrep -q "$LAPTOP" ; then
     video-desktop
+else
+    video-laptop
 fi
