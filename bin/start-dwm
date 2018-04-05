@@ -6,6 +6,9 @@ xscreensaver &
 #disable the touchpad
 disable-touchpad
 
+#make the mouse a little more sensitive
+xset m 3/1 1
+
 # this is my little status daemon
 statusbar --start -x -c 3
 
@@ -15,6 +18,8 @@ if [ -e ~/.background ]; then
 fi
 
 # watch for changes in the clipboard and call dclip copy on it
-watchxclip "dclip copy" & 2>&1 1>> /tmp/dwmlog
+# 2018-02-05: disabled this because it messes with chrome's copy/paste and some
+# other websites (e.g. gslides) that don't like it
+#watchxclip "dclip copy" & 2>&1 1>> /tmp/dwmlog
 
 /usr/local/bin/dwm 2>> /tmp/dwmlog
