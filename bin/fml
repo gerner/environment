@@ -10,7 +10,7 @@ FMLS=0
 trap cntrl_c INT
 
 function cntrl_c() {
-    echo "`date`	${FMLS}" > ${FMLLOG}
+    echo "`date`	${FMLS}" >> ${FMLLOG}
     exit 0
 }
 
