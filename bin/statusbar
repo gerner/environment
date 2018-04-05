@@ -109,7 +109,9 @@ while true; do
     if [ ! -z "$wifiqual" ]; then
         wifiqual=$((100 * $wifiqual))
     fi
-    ipaddr=`hostname  -I | cut -f1 -d' '`
+
+    #pick an ip address to display, but not self assigned local address
+    ipaddr=`hostname  -I | tr ' ' '\n' | grep -v '^169.254' | grep -v '^$' | head -n1` || true
 
     if [ "${batt[1]}" == "Discharging" ]
     then
