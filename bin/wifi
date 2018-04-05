@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+#do network scan
+echo -n "scanning..." > /dev/stderr
+SCANFILE=$(mktemp --tmpdir netscanXXXXX)
+gksudo iwlist scan > $SCANFILE
+echo "done." > /dev/stderr
+
+NETWORK=$(grep ESSID $SCANFILE | grep -o '"[^"]*"' | tr -d '"' | sort -u | dmenu)
+
+if [ -z $NETWORK ]; then
+    echo "no network" > /dev/stderr
+    exit 0
+fi
+
+echo "chose ${NETWORK}" > /dev/stderr
+
+NEW_CONFIG=$(mktemp)
+
+echo 'network={
+    ssid="'${NETWORK}'"
+    key_mgmt=NONE
+}' > $NEW_CONFIG
+
+cat $NEW_CONFIG | tee -a /tmp/fooconf
+
+rm $NEW_CONFIG
+
+echo "done" > /dev/stderr
