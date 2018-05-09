@@ -3,6 +3,20 @@
 set -eu
 set -o pipefail
 
+message=""
+while getopts ":m:" arg; do
+    case ${arg} in
+        m )
+            message="$OPTARG"
+            ;;
+        : )
+            echo "invalid argument" 1>&2
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND -1))
+
 FMLLOG=~/.fml
 
 FMLS=0
@@ -10,7 +24,11 @@ FMLS=0
 trap cntrl_c INT
 
 function cntrl_c() {
-    echo "`date`	${FMLS}" >> ${FMLLOG}
+    if [[ -z "${message}" ]]; then
+        echo "`date`	${FMLS}" >> ${FMLLOG}
+    else
+        echo "`date`	${FMLS}	# ${message}" >> ${FMLLOG}
+    fi
     exit 0
 }
 
