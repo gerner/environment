@@ -17,7 +17,7 @@ def descend_path(j, p)
 end
 
 def header_fields(j)
-  @header_fields ||= j.first.keys.sort
+  @header_fields ||= j.first.keys
 end
 
 def print_row(j)
