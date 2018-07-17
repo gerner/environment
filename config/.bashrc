@@ -166,6 +166,9 @@ export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 #add node to path
 export PATH="$PATH:$HOME/downloads/node/bin"
 
+#add python pip local bin to path
+export PATH="$PATH:$HOME/.local/bin"
+
 export LESS="-FXR"
 
 #I don't know how I feel about this, but I need RVM to use different ruby
