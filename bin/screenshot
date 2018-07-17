@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+import $(mktemp --tmpdir screenshot_XXXXXXXX.png)
