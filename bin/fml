@@ -34,7 +34,8 @@ function cntrl_c() {
 
 
 while(true); do
-    echo -n 'fml';
     FMLS=$((${FMLS} + 1))
-    sleep .1;
+    #echo -n 'fml';
+    #sleep .1;
+    cowsay "you're the man now dog" | while IFS=$'\n' read -r line; do echo "$line"; sleep 0.05; done; sleep 0.7;
 done
