@@ -29,13 +29,114 @@ function cntrl_c() {
     else
         echo "`date`	${FMLS}	# ${message}" >> ${FMLLOG}
     fi
+    echo ""
     exit 0
 }
 
 
-while(true); do
-    FMLS=$((${FMLS} + 1))
-    #echo -n 'fml';
-    #sleep .1;
-    cowsay "you're the man now dog" | while IFS=$'\n' read -r line; do echo "$line"; sleep 0.05; done; sleep 0.7;
+
+
+#old style
+#while(true); do
+#    FMLS=$((${FMLS} + 1))
+#    echo -n 'fml';
+#    sleep .1;
+#done
+
+IFS=$'\n'
+SLEEP_TIME=0.5
+
+print_block() {
+    #get the params
+    local str="$1"
+    local row=$2
+    local col=$3
+    local cols=$(tput cols)
+
+    local lines=()
+
+    readarray -t lines <<<"$STR"
+
+    local height=0
+    local width=0
+    for line in ${lines[@]}; do
+        if [[ ${#line} -gt $width ]]; then
+            width=${#line}
+        fi
+        height=$(($height+1));
+    done
+
+    #given col, which might be outside the console
+    #compute where we actually want to start and the array offsets
+    local offset=0
+    local length=$width
+    if [ "$col" -lt 0 ]; then
+        offset=$(($col * -1))
+        col=0
+    fi
+    width=$(($width - $offset))
+    if [ "$col" -gt $(($cols - 1)) ]; then
+        return 0
+    fi
+
+    if [ "$length" -gt $(($cols - $col)) ]; then
+        length=$(($cols - $col))
+    fi
+
+    local i=0
+    for x in "${lines[@]}"; do
+        #move cursor start of block for the current line
+        tput cup $(($i + $row)) $(($col))
+        #print this line
+        printf "%-${length}s" "${lines[$i]:$offset:$length}"
+        i=$(($i+1))
+    done
+}
+
+STR="$(cowsay you\'re the man now dog)"
+
+lines=()
+height=0
+width=0
+
+readarray -t lines <<<"$STR"
+
+for line in ${lines[@]}; do
+    if [[ ${#line} -gt $width ]]; then
+        width=${#line}
+    fi
+    height=$(($height+1));
 done
+
+j=0
+offset=0
+stepsize=5
+while(true); do
+    cols=$(tput cols)
+    rows=$(tput lines)
+    while(true); do
+        FMLS=$((${FMLS} + 1))
+        print_block "$(cowsay you\'re the man now dog)" $(($rows - $height)) $(($j * $width + $offset))
+        j=$(($j+1))
+        #handle the last block in a line
+        if [ $j -gt $(($cols / $width + 1)) ]; then
+            for x in $(seq 1 $height); do
+                echo ""
+            done
+            break
+        fi
+        sleep 0.1
+    done
+    j=0
+    #plan A: marching message
+    #offset the first block in the next line so it's marching across
+    #offset=$(($offset - $stepsize))
+    #if [ $(($offset + $width)) -lt 0 ]; then
+    #    offset=$(($offset + $width))
+    #fi
+    #plan B: wordwrap message
+    #print whatever did not fit on the last line as if it wordwraps
+    last_out=$(($cols % width + $offset))
+    offset=$((0-$last_out))
+done
+
