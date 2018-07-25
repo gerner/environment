@@ -16,6 +16,10 @@ while getopts ":m:" arg; do
     esac
 done
 shift $((OPTIND -1))
+msg="$@"
+if [[ -z "$msg" ]]; then
+    msg="you're the man now dog"
+fi
 
 FMLLOG=~/.fml
 
@@ -33,16 +37,14 @@ function cntrl_c() {
     exit 0
 }
 
-
-
-
-#old style
+#old style: tile fml
 #while(true); do
 #    FMLS=$((${FMLS} + 1))
 #    echo -n 'fml';
 #    sleep .1;
 #done
 
+#new style: tile cowsay
 IFS=$'\n'
 SLEEP_TIME=0.5
 
@@ -93,7 +95,24 @@ print_block() {
     done
 }
 
-STR="$(cowsay you\'re the man now dog)"
+cursor_pos() {
+    exec < /dev/tty
+    local oldstty=$(stty -g)
+    stty raw -echo min 0
+    # on my system, the following line can be replaced by the line below it
+    echo -en "\033[6n" > /dev/tty
+    # tput u7 > /dev/tty    # when TERM=xterm (and relatives)
+    local oldIFS="$IFS"
+    IFS=';' read -r -d R -a pos
+    IFS="$oldIFS"
+    stty $oldstty
+    # change from one-based to zero based so they work with: tput cup $row $col
+    local pos_row=$((${pos[0]:2} - 1))    # strip off the esc-[
+    local pos_col=$((${pos[1]} - 1))
+    pos=( $pos_row $pos_col )
+}
+
+STR="$(cowsay $msg)"
 
 lines=()
 height=0
@@ -108,35 +127,50 @@ for line in ${lines[@]}; do
     height=$(($height+1));
 done
 
+
+
 j=0
 offset=0
 stepsize=5
 while(true); do
+    #first make sure there's enough space in the terminal by getting the current
+    #position of the cursor and making some more space
     cols=$(tput cols)
     rows=$(tput lines)
+    cursor_pos
+    pos_row=${pos[0]}
+    pos_col=${pos[1]}
+
+    if [ $(($pos_row + $height)) -ge $rows ]; then
+        for x in $(seq $rows $((pos_row + $height - 1))); do
+            echo ""
+        done
+        pos_row=$(($rows - $height))
+    fi
     while(true); do
         FMLS=$((${FMLS} + 1))
-        print_block "$(cowsay you\'re the man now dog)" $(($rows - $height)) $(($j * $width + $offset))
+        print_block "$STR" $pos_row $(($j * $width + $offset))
         j=$(($j+1))
         #handle the last block in a line
         if [ $j -gt $(($cols / $width + 1)) ]; then
-            for x in $(seq 1 $height); do
-                echo ""
-            done
+            #assume cursor at the last line of the last block, move to next line
+            #the check at the top of the outer loop makes room for next block
+            echo ""
             break
         fi
         sleep 0.1
     done
     j=0
+
     #plan A: marching message
     #offset the first block in the next line so it's marching across
-    #offset=$(($offset - $stepsize))
-    #if [ $(($offset + $width)) -lt 0 ]; then
-    #    offset=$(($offset + $width))
-    #fi
+    offset=$(($offset - $stepsize))
+    if [ $(($offset + $width)) -lt 0 ]; then
+        offset=$(($offset + $width))
+    fi
     #plan B: wordwrap message
     #print whatever did not fit on the last line as if it wordwraps
-    last_out=$(($cols % width + $offset))
-    offset=$((0-$last_out))
+    #last_out=$(($cols % width + $offset))
+    #offset=$((0-$last_out))
 done
 
