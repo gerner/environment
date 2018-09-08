@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-s1="config/.bashrc config/.vimrc config/.gitconfig config/.ctags config/ssh_config config/.gitignore_global config/.xscreensaver config/.tmux.conf config/.bcrc config/.inputrc"
-d1="$HOME/.bashrc $HOME/.vimrc $HOME/.gitconfig $HOME/.ctags $HOME/.ssh/config $HOME/.gitignore_global $HOME/.xscreensaver $HOME/.tmux.conf $HOME/.bcrc $HOME/.inputrc"
+s1="config/.bashrc config/.vimrc config/.gitconfig config/.ctags config/ssh_config config/.gitignore_global config/.xscreensaver config/.tmux.conf config/.bcrc config/.inputrc config/.xsessionrc"
+d1="$HOME/.bashrc $HOME/.vimrc $HOME/.gitconfig $HOME/.ctags $HOME/.ssh/config $HOME/.gitignore_global $HOME/.xscreensaver $HOME/.tmux.conf $HOME/.bcrc $HOME/.inputrc $HOME/.xsessionrc"
 
 linkDestinationsToSources() {
         warning=

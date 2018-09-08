@@ -45,3 +45,6 @@ if executable('ag')
   " ag is fast enough that CtrlP doesn't need to cache
   let g:ctrlp_use_caching = 0
 endif
+
+" I don't know what modula2 is, but I think *.md is markdown
+autocmd BufNewFile,BufRead *.md set filetype=markdown
