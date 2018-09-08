@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+WIFI="wlp2s0"
+LAN="enp0s31f6"
+
 if [ -t 1 ]; then
     SUDO=sudo
 elif [ ! -z "$DISPLAY" ]; then
@@ -10,8 +13,8 @@ else
     return 1
 fi
 
-$SUDO ifdown eth0
-$SUDO wpa_action wlan0 stop
+$SUDO ifdown ${LAN}
+$SUDO wpa_action ${WIFI} stop
 sleep 2
 
 echo "stopping network-manager"
@@ -20,7 +23,7 @@ $SUDO killall dhclient || true
 $SUDO killall dhclient3 || true
 $SUDO killall wpa_supplicant || true
 
-$SUDO ifup wlan0
+$SUDO ifup ${WIFI}
 sleep 2
-iwconfig wlan0
-ifconfig wlan0
+iwconfig ${WIFI}
+ifconfig ${WIFI}
