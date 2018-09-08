@@ -61,10 +61,10 @@ function format_n_long {
 function format_h {
     if [ -z $1 ]; then
         num_str="0"
-    elif [ $1 -ge $((8*1024*1024*1024)) ]; then
+    elif [ $1 -ge $((4*1024*1024*1024)) ]; then
         num_str="$(($1/1024/1024/1024))"
         unit=G
-    elif [ $1 -ge $((8*1024*1024)) ]; then
+    elif [ $1 -ge $((4*1024*1024)) ]; then
         num_str="$(($1/1024/1024))"
         unit=M
     elif [ $1 -ge 8096 ]; then
@@ -101,7 +101,8 @@ while true; do
     #mem[1] buffers
     #mem[2] cache
     #mem[3] free
-    mem=(`free -b | awk '/Mem/ {print sprintf("%d", $3-$7-$6),$6,$7,$4}'`)
+    #mem: used=total-free-buff-cache free buff cache
+    mem=($(cat /proc/meminfo | gawk '/^MemTotal:/ { total=$2*1024 } /^MemFree:/ { free=$2*1024 } /^Buffers:/ { buffers=$2*1024 } /^Cached:/ { cached=$2*1024 } END { printf("%d %d %d %d", total-free-buffers-cached, free, buffers, cached) }'))
     #cpu=(`vmstat | tail -n1 | awk '{print $13,$14,$15,$16}'`)
     cpu_usr=$(( (${cpu_after[1]} - ${cpu_before[1]}) + (${cpu_after[2]} - ${cpu_before[2]})))
     cpu_sys=$(( ${cpu_after[3]} - ${cpu_before[3]} ))
