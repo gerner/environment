@@ -61,6 +61,9 @@ function format_n_long {
 function format_h {
     if [ -z $1 ]; then
         num_str="0"
+    elif [ $1 -ge $((4*1024*1024*1024)) ]; then
+        num_str="$(($1/1024/1024/1024))"
+        unit=G
     elif [ $1 -ge $((4*1024*1024)) ]; then
         num_str="$(($1/1024/1024))"
         unit=M
@@ -94,6 +97,10 @@ while true; do
     cpu_after=(`cat /proc/stat | head -n1`)
 
     cpu_freq=`cat /proc/cpuinfo | grep "cpu MHz" | awk '{s+=$NF;n+=1} END {print int(s/n)}'`
+    #mem[0] used (excluding buffers and cached)
+    #mem[1] buffers
+    #mem[2] cache
+    #mem[3] free
     mem=(`free -b | awk '/Mem/ {print sprintf("%d", $3-$7-$6),$6,$7,$4}'`)
     #cpu=(`vmstat | tail -n1 | awk '{print $13,$14,$15,$16}'`)
     cpu_usr=$(( (${cpu_after[1]} - ${cpu_before[1]}) + (${cpu_after[2]} - ${cpu_before[2]})))
