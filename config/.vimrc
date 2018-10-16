@@ -48,3 +48,7 @@ endif
 
 " I don't know what modula2 is, but I think *.md is markdown
 autocmd BufNewFile,BufRead *.md set filetype=markdown
+
+" clang-format bindings
+map <C-K> :pyf /usr/share/clang/clang-format-6.0/clang-format.py<cr>
+imap <C-K> <c-o>:pyf /usr/share/clang/clang-format-6.0/clang-format.py<cr>
