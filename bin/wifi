@@ -5,27 +5,84 @@ set -eu -o pipefail
 #do network scan
 echo -n "scanning..." > /dev/stderr
 SCANFILE=$(mktemp --tmpdir netscanXXXXX)
-gksudo iwlist scan > $SCANFILE
+sudo iwlist scan > $SCANFILE
 echo "done." > /dev/stderr
-
-NETWORK=$(grep ESSID $SCANFILE | grep -o '"[^"]*"' | tr -d '"' | sort -u | dmenu)
+if [ -t 1 ]; then
+    OLDIFS="${IFS}"
+    IFS=$'\n'
+    select NETWORK in $(grep ESSID $SCANFILE | grep -o '"[^"]*"' | tr -d '"' | sort -u); do
+        break
+    done
+    IFS="${OLDIFS}"
+else
+    NETWORK=$(grep ESSID $SCANFILE | grep -o '"[^"]*"' | tr -d '"' | sort -u | dmenu)
+fi
 
 if [ -z $NETWORK ]; then
     echo "no network" > /dev/stderr
-    exit 0
+    exit 1
 fi
 
 echo "chose ${NETWORK}" > /dev/stderr
 
+#pull out the relevant cell from the wifi scan
+NETFILE=$(mktemp --tmpdir netfileXXXXX)
+tac netscanYW05m | awk '/ESSID:"yak/,/Cell [0-9]* - Address/' | tail -n+2 | tac > $NETFILE
+cat netscanYW05m | awk '/ESSID:"yak/,/Cell [0-9]* - Address/' | head -n-1 >> $NETFILE
+
 NEW_CONFIG=$(mktemp)
 
-echo 'network={
+COMMENT="#added by gerner wifi $(date)"
+
+#construct minimal config stanza
+if [[ ! -z $(cat $NETFILE | grep 'Encryption key:off') ]] ; then
+    echo 'encryption key off' > /dev/stderr
+    exit 0
+
+    echo 'network={
     ssid="'${NETWORK}'"
     key_mgmt=NONE
 }' > $NEW_CONFIG
+elif [[ ! -z $(cat $NETFILE | grep 'Encryption key:on') ]] ; then
+    if [[ -z $(cat $NETFILE | grep 'Authentication Suites.*PSK') ]] ; then
+        echo "not PSK auth in ${NETFILE}" > /dev/stderr
+        exit 1
+    fi
 
-cat $NEW_CONFIG | tee -a /tmp/fooconf
+    echo 'encryption key on' > /dev/stderr
 
+    echo "enter password" > /dev/stderr
+    read PSK
+
+    echo 'network={
+    ssid="'${NETWORK}'"
+    psk="'${PSK}'"
+}' > $NEW_CONFIG
+
+else
+    echo "unknown encryption settings in ${NETFILE}" > /dev/stderr
+    exit 1
+fi
+
+#check if this network or config already exists
+if grep "$(cat $NEW_CONFIG | tr -d '\n')" <(cat /etc/wpa_supplicant/wpa_supplicant.conf | tr -d '\n') > /dev/null; then
+    echo "config already present in wpa_supplicant (${NEW_CONFIG}). skipping" > /dev/stderr
+    exit 0
+elif grep "ssid="'"'"${NETWORK}"'"' /etc/wpa_supplicant/wpa_supplicant.conf > /dev/null; then
+    echo "network already present in wpa_supplicant with different config (${NEW_CONFIG}). remove it first." > /dev/stderr
+    exit 1
+fi
+
+#make a backup for safety
+WPA_CONF_BACKUP=$(mktemp --tmpdir wpaconfXXXXX.bak)
+echo "backing up /etc/wpa_supplicant/wpa_supplicant.conf to ${WPA_CONF_BACKUP}"
+cp /etc/wpa_supplicant/wpa_supplicant.conf ${WPA_CONF_BACKUP}
+
+#replace wpa_supplicant
+cat ${WPA_CONF_BACKUP} <(echo "") <(echo "$COMMENT") $NEW_CONFIG | sudo tee /etc/wpa_supplicant/wpa_supplicant.conf > /dev/null
+
+rm $SCANFILE
+rm $NETFILE
 rm $NEW_CONFIG
 
-echo "done" > /dev/stderr
+echo "done. you'll need to reconnect to wifi." > /dev/stderr
