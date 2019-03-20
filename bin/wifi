@@ -18,7 +18,7 @@ else
     NETWORK=$(grep ESSID $SCANFILE | grep -o '"[^"]*"' | tr -d '"' | sort -u | dmenu)
 fi
 
-if [ -z $NETWORK ]; then
+if [ -z "$NETWORK" ]; then
     echo "no network" > /dev/stderr
     exit 1
 fi
@@ -27,24 +27,23 @@ echo "chose ${NETWORK}" > /dev/stderr
 
 #pull out the relevant cell from the wifi scan
 NETFILE=$(mktemp --tmpdir netfileXXXXX)
-tac netscanYW05m | awk '/ESSID:"yak/,/Cell [0-9]* - Address/' | tail -n+2 | tac > $NETFILE
-cat netscanYW05m | awk '/ESSID:"yak/,/Cell [0-9]* - Address/' | head -n-1 >> $NETFILE
+tac $SCANFILE | awk '/ESSID:"'"${NETWORK}"'/,/Cell [0-9]* - Address/' | tail -n+2 | tac > $NETFILE
+cat $SCANFILE | awk '/ESSID:"'"${NETWORK}"'/,/Cell [0-9]* - Address/' | head -n-1 >> $NETFILE
 
 NEW_CONFIG=$(mktemp)
 
 COMMENT="#added by gerner wifi $(date)"
 
 #construct minimal config stanza
-if [[ ! -z $(cat $NETFILE | grep 'Encryption key:off') ]] ; then
+if [[ ! -z "$(cat $NETFILE | grep 'Encryption key:off')" ]] ; then
     echo 'encryption key off' > /dev/stderr
-    exit 0
 
     echo 'network={
     ssid="'${NETWORK}'"
     key_mgmt=NONE
 }' > $NEW_CONFIG
-elif [[ ! -z $(cat $NETFILE | grep 'Encryption key:on') ]] ; then
-    if [[ -z $(cat $NETFILE | grep 'Authentication Suites.*PSK') ]] ; then
+elif [[ ! -z "$(cat $NETFILE | grep 'Encryption key:on')" ]] ; then
+    if [[ -z "$(cat $NETFILE | grep 'Authentication Suites.*PSK')" ]] ; then
         echo "not PSK auth in ${NETFILE}" > /dev/stderr
         exit 1
     fi
