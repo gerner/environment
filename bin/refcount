@@ -1,0 +1,54 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+references=$(mktemp --tmpdir references.XXXXXXXXXX)
+crawled=$(mktemp --tmpdir crawled.XXXXXXXXXX)
+
+ids="$*"
+urls=$(echo "$ids" | tr ' ' '\n' | sed 's/.*/http:\/\/api.semanticscholar.org\/v1\/paper\/&?references=true/' | tr '\n' ' ')
+
+#prep the seed set
+
+echo "prepping seed set" > /dev/stderr
+for x in ${urls}; do
+    o=$(mktemp)
+    echo "fetching $x" > /dev/stderr
+    curl --compressed $x > $o
+    cat $o | jq -r '.url' >> $crawled
+    cat $o | jq -r ' .references[] | [.url, .year, .authors[0].name, .title, .paperId] | @tsv' >> $references
+    rm $o
+done
+
+echo "crawling from seed set" > /dev/stderr
+for x in $(seq 1 50); do
+
+    echo "sorting crawled set" > /dev/stderr
+    s=$(mktemp)
+    cat $crawled | LC_ALL=C sort > $s
+    mv $s $crawled
+
+    echo "computing next url to crawl" > /dev/stderr
+    o=$(mktemp)
+    echo "deduping vs crawled"
+    cat $references | LC_ALL=C sort | LC_ALL=C join -v 1 -t '	' - $crawled | uniq -c | sed -e 's/^ *//;s/ /\t/' | awk '$3 > 2000' | sort -k2n -k3n | tail -n1 > $o
+    nextu=$(cat $o | cut -f 6 | sed 's/.*/http:\/\/api.semanticscholar.org\/v1\/paper\/&?references=true/')
+    echo "chose ${nextu}"
+
+
+    if [[ -z "${nextu}" ]]; then
+        echo "computed the closure" > /dev/stderr
+        break;
+    fi
+
+    echo "adding crawled id" > /dev/stderr
+    cat $o | cut -f 2 >> $crawled
+    echo "fetching ${nextu}" > /dev/stderr
+    o=$(mktemp)
+    curl --compressed $nextu > $o
+    echo "adding references" > /dev/stderr
+    cat $o | jq -r ' .references[] | [.url, .year, .authors[0].name, .title, .paperId] | @tsv' >> $references || true
+    rm $o
+done
+
+echo $references
