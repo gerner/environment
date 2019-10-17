@@ -2,64 +2,202 @@
 
 require 'csv'
 require 'set'
-require 'awesome_print'
+require 'tempfile'
+#require 'awesome_print'
+#require 'pry'
+
+#like a pivot table
+#input:
+#fixed columns
+#some of these called out as outcolumns, outrows, values
+#each row corresponds to a single output cell (per output value aggregate)
+#
+#e.g.
+#1,bar,17.6
+#1,foo,16.5
+#2,bar,16.1
+#2,blerf,1.7
+#
+#output:
+#one column per distinct outcolumn value
+#one row per distinct outrow value
+#each cell is an aggregate of values from all matching (same outcolumn/outrow
+#values) input values
 
 #assume file is sorted rows, columns
-file=ARGV[0]
-has_headers = true
+#so we can do a single pass
+#this means that all aggregation happens on sequential values
+rows=ARGV[0].split(",").map { |v| v.to_i }
+columns=ARGV[1].split(",").map { |v| v.to_i }
 
-rows=ARGV[1].split(",").map { |v| v.to_i }
-columns=ARGV[2].split(",").map { |v| v.to_i }
-numericals = ARGV[3].split(",").map { |v| v.to_i }
+#TODO: parse values in form: AGG ( col )
+#where AGG is some known aggregate function
+#() are literal parens
+#col is a number referring to an input column
+#
 
-column_headers = Set.new
+#need to keep track of these, and it might grow as we go along
+#empty aggregates will output as empty string
+column_values = []
 
-#first get the column headers
-CSV.foreach(file, headers: has_headers) do |parts|
-  column = []
-  columns.each { |i| column << (numericals.include?(i) ? parts[i].to_i : parts[i]) }
-  column_headers.add(column)
+csv_in = CSV.new($stdin, {col_sep: "\t"})
+temp_out = Tempfile.new("pivottemp")
+csv_out = CSV.new(temp_out, {col_sep: "\t"})
+
+def sum_init(a)
+    return a.to_f
 end
 
-column_header_counts = []
-(0...columns.length).each { |i| column_header_counts << Hash.new(0) }
-column_header_counts
-column_headers.each do |c|
-  (0...columns.length).each do |i|
-    column_header_counts[i][c[0..i]] += 1
-  end
+def sum_acc(d, a)
+    return d+a.to_f
 end
 
-csv_output = CSV.new(STDOUT, col_sep: "\t")
-
-expected_column_count = nil
-column_header_counts.each do |column_headers|
-  r_headers = [""]*rows.size
-  c_headers = column_headers.keys.sort.map { |k| [k.last()]*column_headers[k] }.flatten
-  column_count = column_headers.values.reduce(0) { |acc, v| acc+v }
-  expected_column_count = column_count unless expected_column_count
-  exit 1 unless expected_column_count == column_count
-  csv_output << r_headers+c_headers
+def sum_end(d)
+    return d
 end
 
-def print_row csv_output, row, column, column_headers
-  csv_output << row + column_headers.sort.map { |c| (column.include?(c))?1:0 }
+def avg_init(a)
+    return [a.to_f, 1]
 end
 
-last_row = nil
-row_columns = Set.new
-CSV.foreach(file, headers: has_headers) do |parts|
-  row = []
-  rows.each { |i| row << parts[i] }
-  if(last_row && last_row != row)
-    print_row csv_output, last_row, row_columns, column_headers
-    row_columns = Set.new
-  end
-  last_row = row
-
-  column = []
-  columns.each { |i| column << (numericals.include?(i) ? parts[i].to_i : parts[i]) }
-  row_columns.add(column)
+def avg_acc(d, a)
+    return [d[0]+a.to_f, d[1]+1]
 end
 
-print_row csv_output, last_row, row_columns, column_headers if last_row
+def avg_end(d)
+    return nil unless d
+    return d[0]/d[1]
+end
+
+def stdev_init(a)
+    return [a.to_f, a.to_f ** 2, 1]
+end
+
+def stdev_acc(d, a)
+    return [d[0]+a.to_f, d[1]+a.to_f ** 2, d[2]+1]
+end
+
+def stdev_end(d)
+    return nil unless d
+    return Math.sqrt(d[1]/d[2] - (d[0]/d[2]) ** 2)
+end
+
+def max_init(a)
+    return a.to_f
+end
+
+def max_acc(d, a)
+    if a.to_f > d
+        return a.to_f
+    else
+        return d
+    end
+end
+
+def max_end(d)
+    return d
+end
+
+def count_init(a)
+    return 0.0
+end
+
+def count_acc(d, a)
+    return d+1
+end
+
+def count_end(d)
+    return d
+end
+
+values = []
+value_funcs = []
+ARGV[2].split(",").each do |v|
+    m = /([a-z]*)\(([0-9]*)\)/.match(v)
+    #raise "unknown aggregate #{m[1]}" unless self.respond_to? "#{m[1]}_init".to_s
+    value_funcs << {init: "#{m[1]}_init", acc: "#{m[1]}_acc", end: "#{m[1]}_end"}
+    values << m[2].to_i
+end
+
+#value_funcs = [{init: :sum_init, acc: :sum_acc, end: :sum_end}]
+
+def output_row(csv_out, last_row_key, last_row, value_funcs)
+    r = last_row.map do |cell|
+        cell.zip(value_funcs).map do |v, f|
+            send(f[:end], v)
+        end
+    end
+    csv_out << last_row_key + r.flatten
+end
+
+last_row_key = nil
+last_col_key = nil
+last_key_pos = -1
+#represents the output row we're building
+#each element is one (perhaps partially) aggregated cell
+#each cell is an array of values (one per "values" input param)
+last_row = []
+current_cell = nil
+csv_in.each do |in_row|
+    next_row_key = []
+    rows.each { |i| next_row_key << in_row[i] }
+    next_col_key = []
+    columns.each { |i| next_col_key << in_row[i] }
+
+    if next_row_key != last_row_key #new row case
+        #output last row if there was one
+        if last_row_key
+            output_row(csv_out, last_row_key, last_row, value_funcs)
+        end
+
+        last_row = []
+        last_col_key = nil
+        last_key_pos = -1
+    end
+    last_row_key = next_row_key
+
+    if next_col_key == last_col_key #aggregate case
+        #TODO: handle missing values
+        #TODO: handle other kinds of input values (non-float)
+        #TODO: handle other kinds of aggregates (non-SUM)
+        values.each_index { |i| current_cell[i] = send(value_funcs[i][:acc], current_cell[i], in_row[values[i]]) }
+    else #next col in row case
+        #output empty cells between last_col_key and this one
+        col_key_pos = column_values.find_index(next_col_key)
+        unless col_key_pos
+            col_key_pos = column_values.length
+            column_values << next_col_key
+        end
+
+        # allocate a spot in last_row for next_col_key
+        # and everything in between
+        if col_key_pos > last_key_pos
+            raise "too many cols #{column_values}" if col_key_pos - last_row.length > 100
+            (0..(col_key_pos - last_row.length)).each { last_row << [nil]*rows.length }
+        #else we've already allocated space
+        end
+
+        #set up current_cell for this new col key
+        last_col_key = next_col_key
+        last_key_pos = col_key_pos
+        current_cell = last_row[col_key_pos]
+        #TODO: handle missing values
+        #TODO: handle other kinds of input values (non-float)
+        values.each_index { |i| current_cell[i] = send(value_funcs[i][:init], in_row[values[i]]) }
+    end
+end
+
+if last_row_key
+    output_row(csv_out, last_row_key, last_row, value_funcs)
+end
+
+csv_out.flush
+
+#TODO: make sure we end up with one column header per value within a column
+$stdout.puts(([nil] * rows.length + column_values.map { |v| v.join("-") }).map { |v| ([v] * values.length).join("\t")}.join("\t"))
+temp_out.rewind
+IO.copy_stream(temp_out, $stdout)
+temp_out.close
+temp_out.unlink
+exit 0
+
