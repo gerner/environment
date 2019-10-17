@@ -7,6 +7,10 @@ echo -n "scanning..." > /dev/stderr
 SCANFILE=$(mktemp --tmpdir netscanXXXXX)
 sudo iwlist scan > $SCANFILE
 echo "done." > /dev/stderr
+
+#TODO: parse the scan into json objects we can manipulate later
+#| sed -E 's/^ *([^:=]*)[:=] */\1\t/' | tr -d '"\\' | grep '^[A-Za-z0-9]' | awk -F\\t '/^Cell [0-9]* -/ { printf("}\n{\"Address\":\"%s\"",$2);NEXT} !/^Cell [0-9]* -/ {printf(",\"%s\":\"%s\"", $1, $2)} END {printf("}\n")}' | tail -n+2
+
 if [ -t 1 ]; then
     OLDIFS="${IFS}"
     IFS=$'\n'

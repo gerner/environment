@@ -50,5 +50,15 @@ endif
 autocmd BufNewFile,BufRead *.md set filetype=markdown
 
 " clang-format bindings
-map <C-K> :pyf /usr/share/clang/clang-format-6.0/clang-format.py<cr>
-imap <C-K> <c-o>:pyf /usr/share/clang/clang-format-6.0/clang-format.py<cr>
+map <C-K> :py3f /usr/share/clang/clang-format-6.0/clang-format.py<cr>
+imap <C-K> <c-o>:py3f /usr/share/clang/clang-format-6.0/clang-format.py<cr>
+
+set exrc
+set secure
+
+let g:gtest#highlight_failing_tests = 1
+
+augroup GTest
+	autocmd FileType cpp nnoremap <silent> <leader>tt :GTestRun<CR>
+	autocmd FileType cpp nnoremap <silent> <leader>tu :GTestRunUnderCursor<CR>
+augroup END

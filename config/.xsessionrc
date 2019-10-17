@@ -2,4 +2,5 @@
 ibm_trackpad_id=$(xinput | grep 'TPPS' | cut -d"=" -f2 | cut -f1)
 
 #make the trackpoint a little faster
-xinput set-prop $ibm_trackpad_id "Device Accel Constant Deceleration" 0.75
+#xinput set-prop $ibm_trackpad_id "Device Accel Constant Deceleration" 0.75
+xinput set-prop $ibm_trackpad_id "libinput Accel Speed" -0.75

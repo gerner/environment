@@ -144,9 +144,9 @@ export MAVEN_OPTS="-XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Xmx102
 #add these options to get maven debug
 # -Xrunjdwp:transport=dt_socket,address=6006,server=y,suspend=n
 
-if which ruby >/dev/null && which gem >/dev/null; then
-    export PATH="$(ruby -rubygems -e 'puts Gem.user_dir')/bin:$PATH"
-fi
+#if which ruby >/dev/null && which gem >/dev/null; then
+#    export PATH="$(ruby -rubygems -e 'puts Gem.user_dir')/bin:$PATH"
+#fi
 
 #at Placed we use this environment var to hook into pry/pry_debug for testing
 PRY_RESCUE_ENABLED=true
@@ -173,8 +173,12 @@ export LESS="-FXR"
 
 #I don't know how I feel about this, but I need RVM to use different ruby
 # versions
-. ~/.rvm/scripts/rvm
+#. ~/.rvm/scripts/rvm
 
 export PLACED_REPO_DIR=/home/nick/sewichi/src
 
-. ~/.secrets
+if [ -f ~/.secrets ]; then
+    . ~/.secrets
+fi
+
+alias ytmnd=fml
