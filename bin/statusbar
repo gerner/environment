@@ -98,9 +98,9 @@ while true; do
 
     cpu_freq=`cat /proc/cpuinfo | grep "cpu MHz" | awk '{s+=$NF;n+=1} END {print int(s/n)}'`
     #mem[0] used (excluding buffers and cached)
-    #mem[1] buffers
-    #mem[2] cache
-    #mem[3] free
+    #mem[1] free
+    #mem[2] buffers
+    #mem[3] cache
     #mem: used=total-free-buff-cache free buff cache
     mem=($(cat /proc/meminfo | gawk '/^MemTotal:/ { total=$2*1024 } /^MemFree:/ { free=$2*1024 } /^Buffers:/ { buffers=$2*1024 } /^Cached:/ { cached=$2*1024 } END { printf("%d %d %d %d", total-free-buffers-cached, free, buffers, cached) }'))
     #cpu=(`vmstat | tail -n1 | awk '{print $13,$14,$15,$16}'`)
@@ -147,8 +147,8 @@ while true; do
             "$(format_h $(( (${disk_after[1]} - ${disk_before[1]})/$interval )) -gt 4096000000 1024000 1024 1)" \
             "$(format_h $(( (${net_after[0]} - ${net_before[0]})/$interval )) -gt 4096000000 1024000 1024 1)" \
             "$(format_h $(( (${net_after[1]} - ${net_before[1]})/$interval )) -gt 4096000000 1024000 1024 1)" \
-            "$(format_h ${mem[0]} -lt 1000000 1073741824 1610612736)" \
-            "$(format_h ${mem[1]} -lt 200000000 500000000 1024000000)" \
+            "$(format_h ${mem[0]} -lt 1073741824 5368709120 7516192768)" \
+            "$(format_h ${mem[1]} -gt 200000000 500000000 1024000000)" \
             "$(format_h ${mem[2]} -gt 4096000000 512000000 200000000 )" \
             "$(format_h ${mem[3]} -gt 4096000000 800000000 400000000)" \
             "$(format_n ${batt[0]} -gt 99 60 30)" ${charge} \
