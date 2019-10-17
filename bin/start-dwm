@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# run xscreensaver to run so that locking the screen on sleep will work properly (part of acpi)
+# run xscreensaver, mostly to lock the screen on a timeout
 xscreensaver &
+
+# run xss-lock so the screen gets locked on suspend (BEFORE waking up)
+# as per https://wiki.debian.org/SystemdSuspendSedation
+xss-lock -- xscreensaver-command --lock &
 
 #disable the touchpad
 disable-touchpad
