@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -eu
+set -o pipefail
+
+DATA=$(exif -x --ifd=GPS $1)
+
+lat=$(echo "$DATA" | grep '<Latitude>' | tr -d '<Latitude>/,' | awk '{printf("%f\n", $1+$2/60+$3/3600)}')
+if echo "$DATA" | grep -q '<North_or_South_Latitude>S'; then
+    lat="-${lat}"
+fi
+lon=$(echo "$DATA" | grep '<Longitude>' | tr -d '<Longitude>/,' | awk '{printf("%f\n", $1+$2/60+$3/3600)}')
+if echo "$DATA" | grep -q '<East_or_West_Longitude>W'; then
+    lon="-${lon}"
+fi
+
+gps_date=$(echo "$DATA" | grep '<GPS_Date>' | tr -d '<GPS_Date>/' | tr ':' '-')
+gps_time=$(echo "$DATA" | grep '<GPS_Time__Atomic_Clock_>' | tr -d '<GPS_Time__Atomic_Clock_>/')
+
+timestamp=$(date -d "${gps_date} ${gps_time}" +%s)
+
+echo "${timestamp}	${lat}	${lon}"
