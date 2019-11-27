@@ -175,6 +175,11 @@ export LESS="-FXR"
 # versions
 #. ~/.rvm/scripts/rvm
 
+#set up paths for luarocks
+export LUA_PATH='/home/nick/.luarocks/share/lua/5.3/?.lua;/home/nick/.luarocks/share/lua/5.3/?/init.lua;/usr/local/share/lua/5.3/?.lua;/usr/local/share/lua/5.3/?/init.lua;/usr/local/lib/lua/5.3/?.lua;/usr/local/lib/lua/5.3/?/init.lua;/usr/share/lua/5.3/?.lua;/usr/share/lua/5.3/?/init.lua;./?.lua;./?/init.lua'
+export LUA_CPATH='/home/nick/.luarocks/lib/lua/5.3/?.so;/usr/local/lib/lua/5.3/?.so;/usr/lib/x86_64-linux-gnu/lua/5.3/?.so;/usr/lib/lua/5.3/?.so;/usr/local/lib/lua/5.3/loadall.so;./?.so'
+export PATH="$HOME/.luarocks/bin:$PATH"
+
 export PLACED_REPO_DIR=/home/nick/sewichi/src
 
 if [ -f ~/.secrets ]; then
