@@ -131,9 +131,9 @@ while true; do
         charge="="
     fi
 
-    statusline=$( if [ ! -z $ssid ]
+    statusline=$( if [ ! -z "$ssid" ]
     then
-        printf "%s %3s%%|" $ssid $wifiqual
+        printf "%s %3s%%|" "$ssid" $wifiqual
     elif [ ! -z "$ipaddr" ]; then
         printf "%s %s|" $ipaddr
     fi
