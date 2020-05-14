@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+CPUINFO="$(mktemp --tmpdir cpuinfo.XXXXXXXXXX)"
+
+#get info about cpus
+cpufreq-info > $CPUINFO
+
+CURRENT="$(cat $CPUINFO | grep 'The governor "[^"]*" may decide' | sed -e 's/.*The governor "\([^"]*\)" may decide.*/\1/' | sort -u)"
+
+echo "current governor(s):"
+echo $CURRENT
+echo ""
+
+#get avialable governors, assume they're the same for all cpus
+GOVERNORS="$(cat $CPUINFO | grep 'available cpufreq governors' | sed 's/^ *available cpufreq governors: //' | tr -d ' ' | tr ',' '\n' | sort -u | tr '\n' ' ')"
+
+#get list of cpus
+CPUS="$(cat $CPUINFO | grep 'analyzing CPU' | sed -e 's/^analyzing CPU \([0-9]*\):$/\1/')"
+
+echo "choose a new governor"
+select GOVERNOR in $GOVERNORS; do
+    break
+done
+
+for x in ${CPUS}; do
+    sudo cpufreq-set -c $x -g $GOVERNOR
+done
+
+cpufreq-info -p
