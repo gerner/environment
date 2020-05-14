@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -eu
+set -o pipefail
+
+paste -d'	' <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/thermal/thermal_zone*/temp | awk '{printf("%d°F\n", $1 * 9/5000 + 32)}') | column -s'	' -t
+
+echo ""
+
+paste -d'	' <(cat /sys/class/thermal/cooling_device*/type) <(cat /sys/class/thermal/cooling_device*/cur_state) | column -s'	' -t
