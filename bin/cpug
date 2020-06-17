@@ -2,30 +2,58 @@
 
 set -eu -o pipefail
 
-CPUINFO="$(mktemp --tmpdir cpuinfo.XXXXXXXXXX)"
+if cat /sys/devices/system/cpu/cpufreq/policy*/scaling_driver | sort -u | grep "intel_pstate" > /dev/null && cat /sys/devices/system/cpu/intel_pstate/status | grep 'active' > /dev/null; then
+    echo "intel_pstate is in active mode, bypassing any governor setting"
+    echo
 
-#get info about cpus
-cpufreq-info > $CPUINFO
+    CURRENT="$(cat /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference | sort -u)"
 
-CURRENT="$(cat $CPUINFO | grep 'The governor "[^"]*" may decide' | sed -e 's/.*The governor "\([^"]*\)" may decide.*/\1/' | sort -u)"
+    echo "current energy performance preference(s):"
+    echo "$CURRENT"
+    echo
 
-echo "current governor(s):"
-echo $CURRENT
-echo ""
+    PREFERENCES=$(cat /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_available_preferences | tr ' ' '\n' | sort -u  | grep -v '^$' | tr '\n' ' ')
 
-#get avialable governors, assume they're the same for all cpus
-GOVERNORS="$(cat $CPUINFO | grep 'available cpufreq governors' | sed 's/^ *available cpufreq governors: //' | tr -d ' ' | tr ',' '\n' | sort -u | tr '\n' ' ')"
+    echo "choose a new energy preference"
+    COLUMNS=0
+    select PREFERENCE in $PREFERENCES; do
+        break
+    done
 
-#get list of cpus
-CPUS="$(cat $CPUINFO | grep 'analyzing CPU' | sed -e 's/^analyzing CPU \([0-9]*\):$/\1/')"
+    echo $PREFERENCE | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference > /dev/null
 
-echo "choose a new governor"
-select GOVERNOR in $GOVERNORS; do
-    break
-done
+    echo "new preference(s):"
+    cat /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference | sort -u
 
-for x in ${CPUS}; do
-    sudo cpufreq-set -c $x -g $GOVERNOR
-done
+else
+    echo "intel_pstate is in passive mode, using cpufreq governor settings"
+    echo
 
-cpufreq-info -p
+    CPUINFO="$(mktemp --tmpdir cpuinfo.XXXXXXXXXX)"
+
+    #get info about cpus
+    cpufreq-info > $CPUINFO
+
+    CURRENT="$(cat $CPUINFO | grep 'The governor "[^"]*" may decide' | sed -e 's/.*The governor "\([^"]*\)" may decide.*/\1/' | sort -u)"
+
+    echo "current governor(s):"
+    echo $CURRENT
+    echo ""
+
+    #get avialable governors, assume they're the same for all cpus
+    GOVERNORS="$(cat $CPUINFO | grep 'available cpufreq governors' | sed 's/^ *available cpufreq governors: //' | tr -d ' ' | tr ',' '\n' | sort -u | tr '\n' ' ')"
+
+    #get list of cpus
+    CPUS="$(cat $CPUINFO | grep 'analyzing CPU' | sed -e 's/^analyzing CPU \([0-9]*\):$/\1/')"
+
+    echo "choose a new governor"
+    select GOVERNOR in $GOVERNORS; do
+        break
+    done
+
+    for x in ${CPUS}; do
+        sudo cpufreq-set -c $x -g $GOVERNOR
+    done
+
+    cpufreq-info -p
+fi
