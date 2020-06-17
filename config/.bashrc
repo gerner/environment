@@ -187,3 +187,5 @@ if [ -f ~/.secrets ]; then
 fi
 
 alias ytmnd=fml
+
+export AWKPATH=".:$HOME/.awk:/usr/share/awk"

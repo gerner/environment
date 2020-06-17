@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-s1="config/.bashrc config/.vimrc config/.gitconfig config/.ctags config/ssh_config config/.gitignore_global config/.xscreensaver config/.tmux.conf config/.bcrc config/.inputrc config/.xsessionrc"
-d1="$HOME/.bashrc $HOME/.vimrc $HOME/.gitconfig $HOME/.ctags $HOME/.ssh/config $HOME/.gitignore_global $HOME/.xscreensaver $HOME/.tmux.conf $HOME/.bcrc $HOME/.inputrc $HOME/.xsessionrc"
+s1="config/.bashrc config/.vimrc config/.gitconfig config/.ctags config/ssh_config config/.gitignore_global config/.xscreensaver config/.tmux.conf config/.bcrc config/.inputrc config/.xsessionrc config/awk/date.awk config/awk/reduce.awk"
+d1="$HOME/.bashrc $HOME/.vimrc $HOME/.gitconfig $HOME/.ctags $HOME/.ssh/config $HOME/.gitignore_global $HOME/.xscreensaver $HOME/.tmux.conf $HOME/.bcrc $HOME/.inputrc $HOME/.xsessionrc $HOME/.awk/date.awk $HOME/.awk/reduce.awk"
 
 linkDestinationsToSources() {
         warning=
@@ -48,6 +48,9 @@ linkDestinationsToSources() {
                     warning=1
                 fi
             else
+                #first make sure we have the relevant directory
+                mkdir --parents $(dirname "$d")
+                #then create a symlink to our config file so it stays under version control
                 ln -s $s $d
                 echo " linked from $d"
             fi
