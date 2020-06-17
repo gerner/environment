@@ -8,3 +8,4 @@ paste -d'	' <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/therma
 echo ""
 
 paste -d'	' <(cat /sys/class/thermal/cooling_device*/type) <(cat /sys/class/thermal/cooling_device*/cur_state) | column -s'	' -t
+cat /proc/acpi/ibm/fan
