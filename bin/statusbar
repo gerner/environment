@@ -3,6 +3,7 @@ set -e -u -o pipefail
 
 BATTERY_CRITICAL_THRESHOLD=10
 battery_critical=0
+battery_critical_flag=0
 
 SCRIPTNAME=$0
 set -- `getopt -n$0 -u -a --longoptions="start stop" "xc" "$@"`
@@ -154,12 +155,22 @@ while true; do
             "`date +'%a %b %d %H:%M'`" )
 
     if [ "${batt[0]/.*}" -lt "$BATTERY_CRITICAL_THRESHOLD" ] && [ "${batt[1]}" != "Charging" ]; then
+        #once we go from non-critical to critical flash an osd message if we can
         if [ "0" -eq "$battery_critical" ]; then
-            statusline="\x04XXXXXXXXXXXXXX--------------BATTERY ${batt[0]} CRITICAL----------------XXXXXXXXXXXXXX\x01"
-            battery_critical=1
-        else
-            battery_critical=0
+            notify-send -u critical "Battery Level Critical" || true
         fi
+        battery_critical=1
+
+        #flag battery critical message in statusbar
+        if [ "0" -eq "$battery_critical_flag" ]; then
+            statusline="\x04XXXXXXXXXXXXXX--------------BATTERY ${batt[0]} CRITICAL----------------XXXXXXXXXXXXXX\x01"
+            battery_critical_flag=1
+        else
+            battery_critical_flag=0
+        fi
+    else
+        battery_critical=0
+        battery_critical_flag=0
     fi
 
     if [ -z $use_xsetroot ]; then
