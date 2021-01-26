@@ -57,11 +57,11 @@ fi
 #   http://pastie.org/325104
 # Sweeeeeeeet!
 function parse_git_dirty {
-    (git status --porcelain | egrep "^ ?M " --quiet) && echo "(*)"
+    (git status --porcelain --ignore-submodules | egrep "^ ?M " --quiet) && echo "(*)"
 }
 function parse_git_ahead {
     #git status | grep "Your branch is ahead" | sed "s/# Your branch is ahead of .* by \([0-9]*\) commit.*/(\+\1)/"
-    git status --porcelain --branch | egrep -o " \[(ahead|behind).*\]"
+    git status --porcelain --branch --ignore-submodules | egrep -o " \[(ahead|behind).*\]"
 }
 function parse_git_branch {
     git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e "s/*\(.*\)/\1$(parse_git_dirty)$(parse_git_ahead)/"
@@ -179,6 +179,10 @@ export LESS="-FXR"
 export LUA_PATH='/home/nick/.luarocks/share/lua/5.3/?.lua;/home/nick/.luarocks/share/lua/5.3/?/init.lua;/usr/local/share/lua/5.3/?.lua;/usr/local/share/lua/5.3/?/init.lua;/usr/local/lib/lua/5.3/?.lua;/usr/local/lib/lua/5.3/?/init.lua;/usr/share/lua/5.3/?.lua;/usr/share/lua/5.3/?/init.lua;./?.lua;./?/init.lua'
 export LUA_CPATH='/home/nick/.luarocks/lib/lua/5.3/?.so;/usr/local/lib/lua/5.3/?.so;/usr/lib/x86_64-linux-gnu/lua/5.3/?.so;/usr/lib/lua/5.3/?.so;/usr/local/lib/lua/5.3/loadall.so;./?.so'
 export PATH="$HOME/.luarocks/bin:$PATH"
+
+# set up rbenv
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
 
 export PLACED_REPO_DIR=/home/nick/sewichi/src
 
