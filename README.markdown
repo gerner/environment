@@ -13,3 +13,9 @@ Then I've got my environment set up. Doing this manually is not necessary; see I
 ## Installing
 
 There is a handy install.sh script that will install the necessary files.  This script will create symbolic links from the locations where the various config files should live to their environment sources.
+
+some other packages that are useful:
+
+```
+sudo apt install make gawk clang silversearcher-ag dstat pv xscreensaver xss-lock xclip feh rbenv xdotool
+```
