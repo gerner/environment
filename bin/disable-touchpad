@@ -2,7 +2,7 @@
 
 set -e -u -o pipefail
 
-TOUCHPAD_ID=$(xinput list | grep TouchPad | grep -o 'id=[0-9]*' | tr -d id=)
+TOUCHPAD_ID=$(xinput list | grep -i TouchPad | grep -o 'id=[0-9]*' | tr -d id=)
 
 xinput set-prop ${TOUCHPAD_ID} "Device Enabled" 0
 

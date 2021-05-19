@@ -10,8 +10,12 @@ xss-lock -- xscreensaver-command --lock &
 #disable the touchpad
 disable-touchpad
 
-#make the mouse a little more sensitive
-xset m 3/1 1
+#make the trackpad a little less sensitive
+more sensitive
+TRACKPOINT_ID=$(xinput list | grep -i trackpoint | grep -o 'id=[0-9]*' | tr -d id=)
+if [ ! -z "$TRACKPOINT_ID" ]; then
+    xinput --set-prop ${TRACKPOINT_ID} 'libinput Accel Speed' -0.25
+fi
 
 # this is my little status daemon
 statusbar --start -x -c 3
@@ -27,3 +31,4 @@ fi
 #watchxclip "dclip copy" & 2>&1 1>> /tmp/dwmlog
 
 /usr/local/bin/dwm 2>> /tmp/dwmlog
+
