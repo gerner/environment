@@ -14,8 +14,19 @@ Then I've got my environment set up. Doing this manually is not necessary; see I
 
 There is a handy install.sh script that will install the necessary files.  This script will create symbolic links from the locations where the various config files should live to their environment sources.
 
+### Extra Install Steps
+
 some other packages that are useful:
 
 ```
 sudo apt install make gawk clang silversearcher-ag dstat pv xscreensaver xss-lock xclip feh rbenv xdotool
+```
+
+headphone plug/unplug handling needs to be done as root:
+
+```
+sudo cp config/headphone_jack /etc/acpi/events/
+sudo cp bin/headphone_jack.sh /etc/acpi/
+sudo chmod +x /etc/acpi/headphone_jack.sh
+sudo service acpid restart
 ```
