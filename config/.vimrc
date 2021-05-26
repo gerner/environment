@@ -62,3 +62,6 @@ augroup GTest
 	autocmd FileType cpp nnoremap <silent> <leader>tt :GTestRun<CR>
 	autocmd FileType cpp nnoremap <silent> <leader>tu :GTestRunUnderCursor<CR>
 augroup END
+
+autocmd Filetype htmldjango setlocal softtabstop=2 tabstop=2 shiftwidth=2
+autocmd Filetype html setlocal softtabstop=2 tabstop=2 shiftwidth=2
