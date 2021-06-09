@@ -1,0 +1,39 @@
+#!/bin/env bash
+
+# scans wifi and connects to one interactively in cli using nmcli
+
+set -eu -o pipefail
+
+echo -n "scanning..." > /dev/stderr
+SCANFILE=$(mktemp --tmpdir netscanXXXXX)
+nmcli --terse --fields SSID,SECURITY,SIGNAL dev wifi list --rescan yes > $SCANFILE
+echo "done" > /dev/stderr
+
+OLDIFS="${IFS}"
+IFS=$'\n'
+select NETWORK in $(cat $SCANFILE | sort -t':' -k3rn,3rn | cut -d':' -f1 | grep -v "^$" | uniq); do
+    break
+done
+IFS="${OLDIFS}"
+
+if [ -z "$NETWORK" ]; then
+    echo "no network" > /dev/stderr
+    exit 1
+fi
+
+echo "chose ${NETWORK}" > /dev/stderr
+
+
+if (cat $SCANFILE | grep "^${NETWORK}:." > /dev/null); then
+    echo "looking for /etc/NetworkManager/system-connections/${NETWORK}.nmconnection"
+    if [ -f "/etc/NetworkManager/system-connections/${NETWORK}.nmconnection" ]; then
+        echo "found connection" > /dev/stderr
+        sudo nmcli dev wifi connect "$NETWORK"
+    else
+        sudo nmcli dev wifi connect "$NETWORK" --ask
+    fi
+else
+    sudo nmcli dev wifi connect "$NETWORK"
+fi
+
+echo "connected" > /dev/stderr
