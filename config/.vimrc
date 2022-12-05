@@ -65,3 +65,13 @@ augroup END
 
 autocmd Filetype htmldjango setlocal softtabstop=2 tabstop=2 shiftwidth=2
 autocmd Filetype html setlocal softtabstop=2 tabstop=2 shiftwidth=2
+autocmd BufRead,BufNewFile *.pxi setlocal filetype=pyrex
+
+" indentLine config
+let g:indentLine_char = '⋮'
+
+" ignore pycache files in filename completion
+set wildignore+=**/__pycache__/**
+
+" add errorformat for pytype
+set efm+=File\ \"%f\"\\,\ line\ %l\\,\ %m

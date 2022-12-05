@@ -1,0 +1,13 @@
+#!/bin/bash
+set -eu -o pipefail
+
+# file that holds the last weather
+WEATHER_FILE="/tmp/.weather"
+# period to refresh weather data
+WEATHER_PERIOD_SEC=$((60 * 15)) # get weather every 15 minutes
+
+if [ ! -e "$WEATHER_FILE" ] || [ "$(($(date +%s) - $(date +%s -r "$WEATHER_FILE")))" -gt "$WEATHER_PERIOD_SEC" ]; then
+    curl -s 'http://wttr.in/?format=j1' > $WEATHER_FILE
+fi
+
+cat $WEATHER_FILE | jq -r '.current_condition[0] | [.temp_F, .FeelsLikeF, .weatherDesc[0].value] | @tsv' | awk -F\\t '{printf("%d(%d)°F %s\n", $1, $2, $3)}'

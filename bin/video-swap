@@ -3,7 +3,7 @@ set -e
 set -u
 set -o pipefail
 
-LAPTOP="^LVDS1|^eDP1"
+LAPTOP="^LVDS1|^eDP"
 
 if xrandr | awk '/^[^ ]/ {lastout=$0} /\*/ {print lastout}' | egrep -q "$LAPTOP" ; then
     video-desktop

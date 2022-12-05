@@ -66,6 +66,9 @@ function parse_git_ahead {
 function parse_git_branch {
     git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e "s/*\(.*\)/\1$(parse_git_dirty)$(parse_git_ahead)/"
 }
+function parse_git_stash {
+    git stash list | wc -l
+}
 
 if [ "$color_prompt" = yes ]; then
     PS1='${debian_chroot:+($debian_chroot)}\[\033[00;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w$(git branch &>/dev/null; if [ $? -eq 0 ]; then export GIT_PROMPT="\[\033[1;32m\]$(parse_git_branch)"; echo $GIT_PROMPT; fi) \[\033[00m\]\d \t\n\[\033[00;33m\]\$\[\033[00m\] '
@@ -169,7 +172,7 @@ export PATH="$PATH:$HOME/downloads/node/bin"
 #add python pip local bin to path
 export PATH="$PATH:$HOME/.local/bin"
 
-export LESS="-FXR"
+export LESS="-FXRS"
 
 #I don't know how I feel about this, but I need RVM to use different ruby
 # versions
