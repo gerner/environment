@@ -75,3 +75,6 @@ set wildignore+=**/__pycache__/**
 
 " add errorformat for pytype
 set efm+=File\ \"%f\"\\,\ line\ %l\\,\ %m
+
+set exrc
+set secure
