@@ -11,7 +11,6 @@ xss-lock -- xscreensaver-command --lock &
 disable-touchpad
 
 #make the trackpad a little less sensitive
-more sensitive
 TRACKPOINT_ID=$(xinput list | grep -i trackpoint | grep -o 'id=[0-9]*' | tr -d id=)
 if [ ! -z "$TRACKPOINT_ID" ]; then
     xinput --set-prop ${TRACKPOINT_ID} 'libinput Accel Speed' -0.25
