@@ -113,8 +113,9 @@ while true; do
     cpu_total=$(( $cpu_usr + $cpu_sys + $cpu_idle + $cpu_io ))
 
     volume=$(amixer -D pulse get Master | grep -o '\[[0-9]*%' | tr -d '[%' | awk '{v+=$1;n+=1} END {print int(v/n)}')
+    brightness=$(xbacklight -get)
 
-    batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { sub("%", "", $6); print $6} /Charging state/ { print $NF }'`)
+    batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { sub("%", "", $6); printf("%.0f\n", $6)} /Charging state/ { print $NF }'`)
 
     ssid=`iwgetid -r` || true
     wifiqual=`iwconfig 2> /dev/null | grep -o "Link Quality=[0-9]*/[0-9]*" | grep -o "[0-9]*/[0-9]*"` || true
@@ -141,7 +142,7 @@ while true; do
     elif [ ! -z "$ipaddr" ]; then
         printf "%s %s|" $ipaddr
     fi
-        printf "C: %sMHz|C: %s|D: %s %s|N: %s %s|M: %s %s|V: %s%%|B: %3s%% %s| %s" \
+        printf "C: %sMHz|C: %s|D: %s %s|N: %s %s|M: %s %s|V: %s%%|L: %s%%|B: %2s%% %s| %s" \
             "$(format_n_long 4 $cpu_freq -gt 1600 1200 1000)" \
             "$(format_n $(( ($cpu_usr+${cpu_sys}+${cpu_io})*100/$cpu_total )) -lt 5 20 60)" \
             "$(format_h $(( (${disk_after[0]} - ${disk_before[0]})/$interval )) -gt 4096000000 1024000 1024 1)" \
@@ -151,6 +152,7 @@ while true; do
             "$(format_h ${mem[0]} -lt 1073741824 5368709120 7516192768)" \
             "$(format_h ${mem[4]} -gt 12884901888 8589934592 2147483648)" \
             "${volume}" \
+            "${brightness}" \
             "$(format_n ${batt[0]} -gt 99 60 30)" ${charge} \
             "`date +'%a %b %d %H:%M'`" )
 
