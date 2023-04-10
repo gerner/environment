@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# courtesey: https://askubuntu.com/a/954321
+# modified by gerner
+
+set -eu -o pipefail
+
+SCRIPTNAME=$0
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        --start)
+            shift
+            echo "starting $SCRIPTNAME $@"
+            start-stop-daemon --start -p /tmp/screensaver_suspend.pid -b -m -x $SCRIPTNAME -- `echo $@ | sed 's/ -- / /'`
+            exit $?
+            ;;
+        --stop)
+            start-stop-daemon --stop -p /tmp/screensaver_suspend.pid
+            exit $?
+            ;;
+        --) shift;break;;
+    esac
+    shift
+done
+
+while true
+do
+    state=$(pacmd list-sinks | grep -A 4 "*" | grep "state: " | cut -c 9-)  
+    if [[ $state == SUSPENDED || $state == IDLE ]]
+    then
+        echo "State: $state. Not pausing screensaver."
+        sleep 2m
+    else
+        echo "State: $state. Pausing screensaver."
+        xscreensaver-command -deactivate > /dev/null
+        sleep 4m
+    fi
+done
