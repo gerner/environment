@@ -2,4 +2,4 @@
 
 set -eu -o pipefail
 
-paplay /usr/share/sounds/freedesktop/stereo/message.oga
+paplay /home/nick/downloads/alert.wav
