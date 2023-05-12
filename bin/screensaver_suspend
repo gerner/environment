@@ -19,6 +19,10 @@ while [ $# -gt 0 ]; do
             start-stop-daemon --stop -p /tmp/screensaver_suspend.pid
             exit $?
             ;;
+        --state)
+            pacmd list-sinks | grep -A 4 "*" | grep "state: " | cut -c 9-
+            exit $?
+            ;;
         --) shift;break;;
     esac
     shift
@@ -26,7 +30,7 @@ done
 
 while true
 do
-    state=$(pacmd list-sinks | grep -A 4 "*" | grep "state: " | cut -c 9-)  
+    state=$(pacmd list-sinks | grep -A 4 "*" | grep "state: " | cut -c 9-)
     if [[ $state == SUSPENDED || $state == IDLE ]]
     then
         echo "State: $state. Not pausing screensaver."
