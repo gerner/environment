@@ -20,7 +20,7 @@ fi
 statusbar --start -x -c 3
 
 # suspend the screen lock if audio is playing (e.g. watching a video)
-screensaver-suspend --start
+screensaver_suspend --start
 
 # set the desktop background if it exists
 if [ -e ~/.background ]; then
