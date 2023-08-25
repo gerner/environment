@@ -106,6 +106,7 @@ alias hist="git log --pretty=format:'%Cgreen%h %C(yellow)%an %Cblue%ad %Creset%s
 #alias glist='for ref in $(git for-each-ref --sort=-committerdate --format="%(refname)" refs/heads/ ); do git log -n1 $ref --pretty=format:"%Cgreen%cr%Creset %C(yellow)%d%Creset %C(bold blue)<%an>%Creset%n" | cat ; done | awk '"'! a["'$0'"]++'"
 alias glist='git for-each-ref --sort=-committerdate --format="%(color:green)%(committerdate:relative)%(color:reset) %(color:yellow)%(refname:short)%(color:reset) %(color:bold blue)<%(authorname)>%(color:reset)" refs/heads/ | head -n20'
 alias redir="> >(tee /tmp/stdout.log) 2> >(tee /tmp/stderr.log >&2)"
+alias bcl='bc -l'
 
 # Alias definitions.
 # You may want to put all your additions into a separate file like
