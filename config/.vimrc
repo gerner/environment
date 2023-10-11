@@ -67,6 +67,9 @@ autocmd Filetype htmldjango setlocal softtabstop=2 tabstop=2 shiftwidth=2
 autocmd Filetype html setlocal softtabstop=2 tabstop=2 shiftwidth=2
 autocmd BufRead,BufNewFile *.pxi setlocal filetype=pyrex
 
+" autoindent ino Arduino files
+autocmd FileType arduino setlocal smartindent
+
 " indentLine config
 let g:indentLine_char = '⋮'
 
@@ -78,3 +81,7 @@ set efm+=File\ \"%f\"\\,\ line\ %l\\,\ %m
 
 set exrc
 set secure
+
+" never hide characters (what craziness!!!!!)
+set conceallevel=0
+let g:vim_json_conceal=0
