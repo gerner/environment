@@ -1,0 +1,2 @@
+# https://mcmackins.org/articles/rt-systems-linux.html
+ATTR{idVendor}=="2100", RUN+="/sbin/modprobe -q ftdi_sio", RUN+="/bin/sh -c 'echo 2100 $attr{idProduct} >/sys/bus/usb-serial/drivers/ftdi_sio/new_id'"

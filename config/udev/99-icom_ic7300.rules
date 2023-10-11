@@ -1,0 +1,10 @@
+# sets up icom ic-7300 USB connection to always live at /dev/ic7300
+# from: https://gist.github.com/peteonrails/fa99d57b58315a57631956c7e68f4d00
+# also see: https://www.pa8s.nl/projects/linux-and-icom-ic-7300/
+
+SUBSYSTEM!="tty",GOTO="hamlib_end"
+
+# Bus 004 Device 026: ID 10c4:ea60 Cygnal Integrated Products, Inc. CP210x UART Bridge
+ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", TEST!="/dev/ic7300", SYMLINK+="ic7300", MODE="666"
+
+LABEL="hamlib_end"
