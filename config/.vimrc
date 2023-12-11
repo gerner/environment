@@ -84,4 +84,7 @@ set secure
 
 " never hide characters (what craziness!!!!!)
 set conceallevel=0
+let g:indentLine_setConceal=0
 let g:vim_json_conceal=0
+autocmd FileType markdown setlocal conceallevel=0
+
