@@ -17,7 +17,7 @@ if [ ! -z "$TRACKPOINT_ID" ]; then
 fi
 
 # this is my little status daemon
-statusbar --start -x -c 3
+statusbar --start -x 3
 
 # suspend the screen lock if audio is playing (e.g. watching a video)
 screensaver_suspend --start
@@ -32,5 +32,5 @@ fi
 # other websites (e.g. gslides) that don't like it
 #watchxclip "dclip copy" & 2>&1 1>> /tmp/dwmlog
 
-/usr/local/bin/dwm 2>> /tmp/dwmlog
+/usr/local/bin/dwm 2> >(logger -t dwm)
 
