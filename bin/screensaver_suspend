@@ -20,7 +20,7 @@ while [ $# -gt 0 ]; do
             exit $?
             ;;
         --state)
-            pacmd list-sinks | grep -A 4 "*" | grep "state: " | cut -c 9-
+            pacmd list-sink-inputs | awk '/^[ \t]+state:/ { state=$2 } /^[ \t]+client:/ { match($0, "<[^>]*>", m); printf("%s\t%s\n", m[0],state)}' | grep 'RUNNING'
             exit $?
             ;;
         --) shift;break;;
@@ -30,14 +30,14 @@ done
 
 while true
 do
-    state=$(pacmd list-sinks | grep -A 4 "*" | grep "state: " | cut -c 9-)
-    if [[ $state == SUSPENDED || $state == IDLE ]]
+    # check if there are RUNNING pulse sink inputs that aren't pianobar which I'm happy to lock for
+    if (pacmd list-sink-inputs | awk '/^[ \t]+state:/ { state=$2 } /^[ \t]+client:/ { match($0, "<[^>]*>", m); printf("%s\t%s\n", m[0],state)}' | grep 'RUNNING' | grep -v 'pianobar')
     then
-        echo "State: $state. Not pausing screensaver."
-        sleep 2m
-    else
-        echo "State: $state. Pausing screensaver."
+        echo "Pausing screensaver."
         xscreensaver-command -deactivate > /dev/null
         sleep 4m
+    else
+        echo "No relevant RUNNING pulse sink inputs. Not pausing screensaver."
+        sleep 2m
     fi
 done
