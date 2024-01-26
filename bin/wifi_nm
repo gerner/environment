@@ -11,7 +11,7 @@ echo "done" > /dev/stderr
 
 OLDIFS="${IFS}"
 IFS=$'\n'
-select NETWORK in $(cat $SCANFILE | sort -t':' -k3rn,3rn | cut -d':' -f1 | grep -v "^$" | uniq); do
+select NETWORK in $(cat $SCANFILE | sort -t':' -k3rn,3rn | sort -u -t':' -k1,1 | sort -t':' -k3rn,3rn | cut -d':' -f1 | grep -v "^$" | uniq); do
     break
 done
 IFS="${OLDIFS}"
