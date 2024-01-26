@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# creates a virtual display device, like attaching an extra monitor, but
+# entirely virtual. shows up as another monitor
+
+virtualdisplayname=DisplayPort-0
+resolution=1920x1080 # Same as the laptop's built in monitor
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        --start)
+            echo "Starting " $virtualdisplayname
+            xrandr --addmode $virtualdisplayname $resolution
+            xrandr --output $virtualdisplayname --mode $resolution --right-of eDP
+            ;;
+        --stop)
+            xrandr --output $virtualdisplayname --off
+            ;;
+    esac
+    shift
+done
