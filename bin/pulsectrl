@@ -1,0 +1,98 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+###############################################################################
+# script for doing stuff with pulse audio
+# lets you get and set the default pulse input/output devices
+# see this pulse audio wiki page for more info:
+# https://wiki.archlinux.org/title/PulseAudio/Examples#Set_default_input_source
+###############################################################################
+
+SCRIPTNAME=$(basename $0)
+set -- `getopt -n$0 -u -a --longoptions="source sink help" "h" "$@"`
+
+usage="$SCRIPTNAME [option ...]
+
+options:
+  --source    set the default source
+  --sink      set the default sink
+  -h, --help  show this help message"
+
+
+# first get some info
+
+SOURCE_FILE=$(mktemp --tmpdir pulsesourceXXXXX)
+SINK_FILE=$(mktemp --tmpdir pulsesinkXXXXX)
+
+trap 'rm -f $SOURCE_FILE $SINK_FILE' EXIT
+
+pacmd list-sources | grep -e 'index:' -e device.description -e 'name:' | awk '/^ *[*] index:/ {is_default=1} /^ *index:/ {is_default=0} /name:/ {match($0, /name: <([^>]*)>/, m); name=m[1];} /device.description/ { match($0, /device.description = "(.*)"$/, m); description=m[1]; printf("%s\t%s\t%d\n", name, description, is_default);}' > $SOURCE_FILE
+
+pacmd list-sinks | grep -e 'index:' -e device.description -e 'name:' | awk '/^ *[*] index:/ {is_default=1} /^ *index:/ {is_default=0} /name:/ {match($0, /name: <([^>]*)>/, m); name=m[1];} /device.description/ { match($0, /device.description = "(.*)"$/, m); description=m[1]; printf("%s\t%s\t%d\n", name, description, is_default);}' > $SINK_FILE
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        --source)
+            shift
+
+            echo "default source:"
+            cat $SOURCE_FILE | grep "1$" | cut -f2
+            echo "$(cat $SOURCE_FILE | wc -l) available sources"
+            echo ""
+
+            old_ifs="$IFS"
+            IFS=$'\n'
+            select SOURCE_DESC in $(cat $SOURCE_FILE | cut -f2); do
+                if [[ -z "$SOURCE_DESC" ]]; then
+                    echo "not a valid option"
+                    exit 1
+                fi
+                # now set the default source to the line matching $REPLY
+                SELECTED_SOURCE=$(cat $SOURCE_FILE | tail -n+$REPLY | head -n1 | cut -f1)
+                pacmd "set-default-source $SELECTED_SOURCE"
+                echo ""
+                echo "default source set to $SELECTED_SOURCE"
+                echo "aka $SOURCE_DESC"
+                break;
+            done
+            IFS="$old_ifs"
+
+            exit $?
+            ;;
+        --sink)
+            shift
+
+            echo "default sink:"
+            cat $SINK_FILE | grep "1$" | cut -f2
+            echo "$(cat $SINK_FILE | wc -l) available sinks"
+            echo ""
+
+            old_ifs="$IFS"
+            IFS=$'\n'
+            select SINK_DESC in $(cat $SINK_FILE | cut -f2); do
+                if [[ -z "$SINK_DESC" ]]; then
+                    echo "not a valid option"
+                    exit 1
+                fi
+                # now set the default source to the line matching $REPLY
+                SELECTED_SINK=$(cat $SINK_FILE | tail -n+$REPLY | head -n1 | cut -f1)
+                pacmd "set-default-sink $SELECTED_SINK"
+                echo ""
+                echo "default sink set to $SELECTED_SINK"
+                echo "aka $SINK_DESC"
+                break;
+            done
+            IFS="$old_ifs"
+
+            exit $?
+            ;;
+        --) shift;break;;
+        -h) ;&
+        --help)
+            echo "${usage}"
+            exit 0
+    esac
+    shift
+done
+
