@@ -1,0 +1,124 @@
+#!/bin/bash
+set -eu -o pipefail
+
+SCRIPTNAME=$(basename $0)
+
+SCANFILE=$(mktemp --tmpdir bluescanXXXXX)
+RAWIDFILE=$(mktemp --tmpdir blueidXXXXX)
+IDFILE=$(mktemp --tmpdir blueidXXXXX)
+PAIREDFILE=$(mktemp --tmpdir bluepairedXXXXX)
+SCANTIME=4
+
+function printusage {
+    echo "usage $SCRIPTNAME [<option> ...] command"
+    echo ""
+    echo "commands:"
+    echo "    con|connect           pair/connect a device"
+    echo "    dis|disconnect        disconnect a connected device"
+    echo "    disall|disconnectall  disconnect all connected devices"
+    echo ""
+    echo "options:"
+    echo "    --scan [n]  do a scan for n seconds (deafult 4) for devices"
+}
+
+set -- `getopt -n$0 -u -a --longoptions="scan help" "h" "$@"`
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        --scan)
+            if [ $# -gt 1 ] && echo "$2" | grep -E "^[0-9]+$" > /dev/null; then
+                SCANTIME=$2
+                shift
+            fi
+            shift
+            # get devices via a scan
+            echo -n "scanning devices..."
+            echo -e "menu scan\nclear\n" | bluetoothctl > /dev/null
+            bluetoothctl scan on > $SCANFILE &
+            blue_pid="$!"
+            sleep $SCANTIME
+            kill $blue_pid
+            sleep 0.1
+            echo "done."
+            ;;
+        --help|-h)
+            shift
+            printusage
+            exit 0
+            ;;
+        --) shift;break;;
+    esac
+    shift
+done
+
+# get known devices
+if [ ! -s $SCANFILE ]; then
+    bluetoothctl devices > $SCANFILE
+    cat $SCANFILE | grep "Device" | awk '{print $2}' | sort -u > $RAWIDFILE || true
+fi
+
+
+# get devices
+if [[ -z "$(cat $RAWIDFILE)" ]]; then
+    echo "no bluetooth devices found."
+    exit 1
+fi
+
+for x in $(cat $RAWIDFILE); do
+    bluetoothctl info $x | grep -e "Device" -e "Alias:" -e "Paired:" -e "Connected:" | awk '/Device/ {id=$2;} /Alias:/ {match($0, /Alias: (.*)/, m);name=m[1]} /Paired:/ { paired=$2} /Connected:/ {connected=$2} END {printf("%s\t%s\t%s\t%s\n", id, paired, connected, name)}' >> $IDFILE
+done
+
+bluetoothctl paired-devices | awk '{match($0, /Device ([^ ]+) (.*)$/, m); printf("%s\t%s\n", m[1], m[2])}' > $PAIREDFILE
+
+
+# do stuff
+if [ $# -eq 0 ]; then
+    printusage
+    exit 1
+elif [[ "$1" == "con" ]] || [[ "$1" == "connect" ]]; then
+
+    echo "connect device:"
+    OLDIFS="${IFS}"
+    IFS=$'\n'
+    select DEVICE in $(cat $IDFILE | awk '$3 == "no"' | cut -f 4); do
+        break
+    done
+    IFS="$OLDIFS"
+
+    chosen_id=$(cat $IDFILE | awk '$3 == "no"' | tail -n+"$REPLY" | head -n1 | cut -f1)
+    if cat $PAIREDFILE | cut -f 1 | grep $chosen_id > /dev/null; then
+        echo -n "already paired. connecting ${DEVICE}..."
+        bluetoothctl connect $chosen_id
+    else
+        echo -n "not paired, pairing and connecting ${DEVICE}..."
+        bluetoothctl pair $chosen_id
+        echo "done"
+
+    fi
+
+elif [[ "$1" == "dis" ]] || [[ "$1" == "disconnect" ]]; then
+
+    echo "disconnect device:"
+    OLDIFS="${IFS}"
+    IFS=$'\n'
+    select DEVICE in $(cat $IDFILE | awk '$3 == "yes"' | cut -f 4); do
+        break
+    done
+    IFS="$OLDIFS"
+
+    chosen_id=$(cat $IDFILE | awk '$3 == "yes"' | tail -n+"$REPLY" | head -n1 | cut -f1)
+    echo -n "disconnecting $DEVICE..."
+    bluetoothctl disconnect $chosen_id
+    echo "done."
+
+elif [[ "$1" == "disall" ]] || [[ "$1" == "disconnectall" ]]; then
+    for x in $(cat $IDFILE | awk '$3 == "yes"' | cut -f 1); do
+        bluetoothctl disconnect $x
+    done
+else
+    echo "unknown command '$1'"
+    exit 1
+fi
+
+rm -f $SCANFILE $RAWIDFILE $IDFILE $PAIREDFILE
+
