@@ -10,9 +10,15 @@ set -eu -o pipefail
 ###############################################################################
 
 SCRIPTNAME=$(basename $0)
-set -- `getopt -n$0 -u -a --longoptions="source sink help" "h" "$@"`
+set -- `getopt -n$0 -u -a --longoptions="help" "h" "$@"`
 
-usage="$SCRIPTNAME [option ...]
+usage="$SCRIPTNAME [option ...] command
+
+commands:
+  source              set defualt source
+  sink                set efault sink
+  apploop  [loopname] set up a sink that forwards into a sink named loopname
+                       e.g. for streaming app audio
 
 options:
   --source    set the default source
@@ -33,66 +39,79 @@ pacmd list-sinks | grep -e 'index:' -e device.description -e 'name:' | awk '/^ *
 
 while [ $# -gt 0 ]; do
     case $1 in
-        --source)
+        -h|--help)
             shift
-
-            echo "default source:"
-            cat $SOURCE_FILE | grep "1$" | cut -f2
-            echo "$(cat $SOURCE_FILE | wc -l) available sources"
-            echo ""
-
-            old_ifs="$IFS"
-            IFS=$'\n'
-            select SOURCE_DESC in $(cat $SOURCE_FILE | cut -f2); do
-                if [[ -z "$SOURCE_DESC" ]]; then
-                    echo "not a valid option"
-                    exit 1
-                fi
-                # now set the default source to the line matching $REPLY
-                SELECTED_SOURCE=$(cat $SOURCE_FILE | tail -n+$REPLY | head -n1 | cut -f1)
-                pacmd "set-default-source $SELECTED_SOURCE"
-                echo ""
-                echo "default source set to $SELECTED_SOURCE"
-                echo "aka $SOURCE_DESC"
-                break;
-            done
-            IFS="$old_ifs"
-
-            exit $?
-            ;;
-        --sink)
-            shift
-
-            echo "default sink:"
-            cat $SINK_FILE | grep "1$" | cut -f2
-            echo "$(cat $SINK_FILE | wc -l) available sinks"
-            echo ""
-
-            old_ifs="$IFS"
-            IFS=$'\n'
-            select SINK_DESC in $(cat $SINK_FILE | cut -f2); do
-                if [[ -z "$SINK_DESC" ]]; then
-                    echo "not a valid option"
-                    exit 1
-                fi
-                # now set the default source to the line matching $REPLY
-                SELECTED_SINK=$(cat $SINK_FILE | tail -n+$REPLY | head -n1 | cut -f1)
-                pacmd "set-default-sink $SELECTED_SINK"
-                echo ""
-                echo "default sink set to $SELECTED_SINK"
-                echo "aka $SINK_DESC"
-                break;
-            done
-            IFS="$old_ifs"
-
-            exit $?
-            ;;
-        --) shift;break;;
-        -h) ;&
-        --help)
             echo "${usage}"
             exit 0
+            ;;
+        --) shift;break;;
     esac
     shift
 done
 
+if [ $# -eq 0 ]; then
+    echo "wtf"
+    echo "${usage}"
+    exit 1
+elif [[ $1 == "source" ]]; then
+    echo "default source:"
+    cat $SOURCE_FILE | grep "1$" | cut -f2
+    echo "$(cat $SOURCE_FILE | wc -l) available sources"
+    echo ""
+
+    old_ifs="$IFS"
+    IFS=$'\n'
+    select SOURCE_DESC in $(cat $SOURCE_FILE | cut -f2); do
+        if [[ -z "$SOURCE_DESC" ]]; then
+            echo "not a valid option"
+            exit 1
+        fi
+        # now set the default source to the line matching $REPLY
+        SELECTED_SOURCE=$(cat $SOURCE_FILE | tail -n+$REPLY | head -n1 | cut -f1)
+        pacmd "set-default-source $SELECTED_SOURCE"
+        echo ""
+        echo "default source set to $SELECTED_SOURCE"
+        echo "aka $SOURCE_DESC"
+        break;
+    done
+    IFS="$old_ifs"
+elif [[ $1 == "sink" ]]; then
+    echo "default sink:"
+    cat $SINK_FILE | grep "1$" | cut -f2
+    echo "$(cat $SINK_FILE | wc -l) available sinks"
+    echo ""
+
+    old_ifs="$IFS"
+    IFS=$'\n'
+    select SINK_DESC in $(cat $SINK_FILE | cut -f2); do
+        if [[ -z "$SINK_DESC" ]]; then
+            echo "not a valid option"
+            exit 1
+        fi
+        # now set the default source to the line matching $REPLY
+        SELECTED_SINK=$(cat $SINK_FILE | tail -n+$REPLY | head -n1 | cut -f1)
+        pacmd "set-default-sink $SELECTED_SINK"
+        echo ""
+        echo "default sink set to $SELECTED_SINK"
+        echo "aka $SINK_DESC"
+        break;
+    done
+    IFS="$old_ifs"
+elif [[ $1 == "apploop" ]]; then
+    # set up a sink that apps can write to
+    # all of this audio is then available from a cooresponding sink
+    #   pulseaudio actually does this for free by creating a monitor source
+    #   those sources don't show up in apps, so this creates a source that
+    #   will show up and pipes the monitor source into this new source
+    #   you can get the same effect by forcing your app to use the monitor
+    #   source, e.g. via pavucontrol in the recording tab
+    if [[ $# -gt 1 ]]; then
+        loop_name=$2
+    else
+        loop_name=apploop
+    fi
+    pactl load-module module-null-sink sink_name=${loop_name}
+    pacmd update-sink-proplist ${loop_name} device.description=${loop_name}
+    pactl load-module module-remap-source source_name=${loop_name}.source master=${loop_name}.monitor
+    pacmd update-source-proplist ${loop_name}.source device.description=${loop_name}.source
+fi
