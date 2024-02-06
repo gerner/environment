@@ -7,18 +7,39 @@ SCANFILE=$(mktemp --tmpdir bluescanXXXXX)
 RAWIDFILE=$(mktemp --tmpdir blueidXXXXX)
 IDFILE=$(mktemp --tmpdir blueidXXXXX)
 PAIREDFILE=$(mktemp --tmpdir bluepairedXXXXX)
+
+trap 'rm -f $SCANFILE $RAWIDFILE $IDFILE $PAIREDFILE' EXIT
+
 SCANTIME=4
 
 function printusage {
     echo "usage $SCRIPTNAME [<option> ...] command"
     echo ""
     echo "commands:"
+    echo "    info                  info about connected/paired devices"
     echo "    con|connect           pair/connect a device"
     echo "    dis|disconnect        disconnect a connected device"
     echo "    disall|disconnectall  disconnect all connected devices"
     echo ""
     echo "options:"
     echo "    --scan [n]  do a scan for n seconds (deafult 4) for devices"
+}
+
+function check_connected {
+    local tries=0
+    local max_tries=15
+    local sleep_time="0.3"
+    local err=1
+    while [[ $tries -lt $max_tries ]]; do
+        sleep
+        if bluetoothctl info $1 | grep 'Connected: yes' > /dev/null; then
+            err=0
+            break
+        fi
+        tries=$((${tries}+1))
+        sleep 0.5
+    done
+    return err
 }
 
 set -- `getopt -n$0 -u -a --longoptions="scan help" "h" "$@"`
@@ -40,6 +61,11 @@ while [ $# -gt 0 ]; do
             kill $blue_pid
             sleep 0.1
             echo "done."
+            #cat $SCANFILE | wc -l
+            #cat $SCANFILE | grep "Device" | awk '{print $3}' | sort -u > $RAWIDFILE || true
+            #echo $SCANFILE
+            #echo $RAWIDFILE
+            #exit 1
             ;;
         --help|-h)
             shift
@@ -51,11 +77,9 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-# get known devices
-if [ ! -s $SCANFILE ]; then
-    bluetoothctl devices > $SCANFILE
-    cat $SCANFILE | grep "Device" | awk '{print $2}' | sort -u > $RAWIDFILE || true
-fi
+# get known devices (should be updated from scan if we did one)
+bluetoothctl devices > $SCANFILE
+cat $SCANFILE | grep "Device" | awk '{print $2}' | sort -u > $RAWIDFILE || true
 
 
 # get devices
@@ -72,9 +96,45 @@ bluetoothctl paired-devices | awk '{match($0, /Device ([^ ]+) (.*)$/, m); printf
 
 
 # do stuff
-if [ $# -eq 0 ]; then
-    printusage
-    exit 1
+if [ $# -eq 0 ] || [[ $1 == "info" ]]; then
+    if [ -z "$(cat $IDFILE | awk '$3 == "yes"' | cut -f 1,4)" ]; then
+        echo "no connected devices"
+    else
+        echo "connected devices:"
+        OLDIFS="${IFS}"
+        IFS=$'\n'
+        for x in $(cat $IDFILE | awk '$3 == "yes"' | cut -f 1,4); do
+            echo "    ${x}"
+        done
+        IFS="$OLDIFS"
+        echo ""
+    fi
+    if [ -z "$(cat $IDFILE | awk '$2 == "yes" && $3 == "no" ' | cut -f 1,4)" ]; then
+        echo "no paired but unconnected devices"
+    else
+        echo "paired but unconnected devices:"
+        OLDIFS="${IFS}"
+        IFS=$'\n'
+        for x in $(cat $IDFILE | awk '$2 == "yes" && $3 == "no" ' | cut -f 1,4); do
+            echo "    ${x}"
+        done
+        IFS="$OLDIFS"
+        echo ""
+    fi
+
+    if [ -z "$(cat $IDFILE | awk '$2 == "no"' | cut -f 1,4)" ]; then
+        echo "no unpaired devices"
+    else
+        echo "unpaired devices:"
+        OLDIFS="${IFS}"
+        IFS=$'\n'
+        for x in $(cat $IDFILE | awk '$2 == "no"' | cut -f 1,4); do
+            echo "    ${x}"
+        done
+        IFS="$OLDIFS"
+        echo ""
+    fi
+
 elif [[ "$1" == "con" ]] || [[ "$1" == "connect" ]]; then
 
     echo "connect device:"
@@ -88,10 +148,22 @@ elif [[ "$1" == "con" ]] || [[ "$1" == "connect" ]]; then
     chosen_id=$(cat $IDFILE | awk '$3 == "no"' | tail -n+"$REPLY" | head -n1 | cut -f1)
     if cat $PAIREDFILE | cut -f 1 | grep $chosen_id > /dev/null; then
         echo -n "already paired. connecting ${DEVICE}..."
-        bluetoothctl connect $chosen_id
+        if ! bluetoothctl connect $chosen_id > /dev/null; then
+            # sometimes connecting reports as failed, but actually succeeds
+            if check_connected "$chosen_id"; then
+                echo "could not connect"
+                exit 1
+            fi
+        fi
     else
         echo -n "not paired, pairing and connecting ${DEVICE}..."
-        bluetoothctl pair $chosen_id
+        if ! bluetoothctl pair $chosen_id > /dev/null; then
+            # sometimes pairing reports as failed, but actually succeeds
+            if check_connected "$chosen_id"; then
+                echo "could not connect"
+                exit 1
+            fi
+        fi
         echo "done"
 
     fi
