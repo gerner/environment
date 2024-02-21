@@ -2,9 +2,27 @@
 # from: https://gist.github.com/peteonrails/fa99d57b58315a57631956c7e68f4d00
 # also see: https://www.pa8s.nl/projects/linux-and-icom-ic-7300/
 
-SUBSYSTEM!="tty",GOTO="hamlib_end"
+SUBSYSTEM!="tty",GOTO="ic7300_hamlib_end"
 
 # Bus 004 Device 026: ID 10c4:ea60 Cygnal Integrated Products, Inc. CP210x UART Bridge
-ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", TEST!="/dev/ic7300", SYMLINK+="ic7300", MODE="666"
+ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", ATTRS{serial}=="IC-7300 02050396", TEST!="/dev/ic7300", SYMLINK+="ic7300", MODE="666"
 
-LABEL="hamlib_end"
+LABEL="ic7300_hamlib_end"
+
+# name the audio device something sensible
+SUBSYSTEM!="sound", GOTO="ic7300_alsa_end"
+ACTION!="add", GOTO="ic7300_alsa_end"
+
+ATTRS{idVendor}=="08bb", ATTRS{idProduct}=="2901", ATTRS{product}=="USB Audio CODEC ", ATTR{id}="ic7300_card"
+#DEVPATH=="/devices/pci0000:00/0000:00:08.1/0000:07:00.4/usb?/6-2/6-2.4/6-2.4:1.0/sound/card?", ATTR{id}="ic7300_card"
+
+LABEL="ic7300_alsa_end"
+
+SUBSYSTEM!="sound", GOTO="ic7300_pulseaudio_end"
+ACTION!="change", GOTO="ic7300_pulseaudio_end"
+KERNEL!="card*", GOTO="ic7300_pulseaudio_end"
+
+ATTRS{idVendor}=="08bb", ATTRS{idProduct}=="2901", ATTRS{product}=="USB Audio CODEC ", ENV{PULSE_NAME}="ic7300_card", ENV{ID_MODEL_FROM_DATABASE}="IC-7300"
+#DEVPATH=="/devices/pci0000:00/0000:00:08.1/0000:07:00.4/usb?/6-2/6-2.4/6-2.4:1.0/sound/card?", ENV{PULSE_NAME}="ic7300_card"
+
+LABEL="ic7300_pulseaudio_end"

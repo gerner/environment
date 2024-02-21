@@ -1,0 +1,29 @@
+# sets up icom ic-2730a USB connection(s) to always live at well-named /dev/
+# links
+# from: https://gist.github.com/peteonrails/fa99d57b58315a57631956c7e68f4d00
+# also see: https://www.pa8s.nl/projects/linux-and-icom-ic-7300/
+
+SUBSYSTEM!="tty",GOTO="ic2730a_hamlib_end"
+
+# RT systems programming cable for ic-2730a
+ATTRS{idVendor}=="2100", ATTRS{idProduct}=="9e53", ATTRS{serial}=="RT8O65KX", TEST!="/dev/ic2730a", SYMLINK+="ic2730a", MODE="666"
+# digirig. it shows up as Silicon Labs USB to UART bridge, so this isn't really specific enough, but we'll take what we can get
+ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", ATTRS{serial}=="dc34f53fbc86ed1196ac2ed7a603910e", TEST!="/dev/ic2730a_digirig", SYMLINK+="ic2730a_digirig", MODE="666"
+
+LABEL="ic2730a_hamlib_end"
+
+# name the audio device something sensible
+SUBSYSTEM!="sound", GOTO="ic2730a_alsa_end"
+ACTION!="add", GOTO="ic2730a_alsa_end"
+
+ATTRS{idVendor}=="0d8c", ATTRS{idProduct}=="0012", ATTRS{product}=="USB Audio Device", ATTR{id}="ic2730a_card"
+
+LABEL="ic2730a_alsa_end"
+
+SUBSYSTEM!="sound", GOTO="ic2730a_pulseaudio_end"
+ACTION!="change", GOTO="ic2730a_pulseaudio_end"
+KERNEL!="card*", GOTO="ic2730a_pulseaudio_end"
+
+ATTRS{idVendor}=="0d8c", ATTRS{idProduct}=="0012", ATTRS{product}=="USB Audio Device", ENV{PULSE_NAME}="ic2730a_card", ENV{ID_MODEL_FROM_DATABASE}="IC-2730A"
+
+LABEL="ic2730a_pulseaudio_end"
