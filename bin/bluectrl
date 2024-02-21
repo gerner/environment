@@ -1,6 +1,11 @@
 #!/bin/bash
 set -eu -o pipefail
 
+###############################################################################
+# script for doing stuff with bluetooth
+# simplifies the process of connecting and disconnected bluetooth devices
+###############################################################################
+
 SCRIPTNAME=$(basename $0)
 
 SCANFILE=$(mktemp --tmpdir bluescanXXXXX)
@@ -20,6 +25,7 @@ function printusage {
     echo "    con|connect           pair/connect a device"
     echo "    dis|disconnect        disconnect a connected device"
     echo "    disall|disconnectall  disconnect all connected devices"
+    echo "    reset                 reset bluetooth kernel module"
     echo ""
     echo "options:"
     echo "    --scan [n]  do a scan for n seconds (deafult 4) for devices"
@@ -31,15 +37,15 @@ function check_connected {
     local sleep_time="0.3"
     local err=1
     while [[ $tries -lt $max_tries ]]; do
-        sleep
         if bluetoothctl info $1 | grep 'Connected: yes' > /dev/null; then
             err=0
             break
         fi
         tries=$((${tries}+1))
-        sleep 0.5
+        echo -n "."
+        sleep 1
     done
-    return err
+    return $err
 }
 
 set -- `getopt -n$0 -u -a --longoptions="scan help" "h" "$@"`
@@ -150,22 +156,22 @@ elif [[ "$1" == "con" ]] || [[ "$1" == "connect" ]]; then
         echo -n "already paired. connecting ${DEVICE}..."
         if ! bluetoothctl connect $chosen_id > /dev/null; then
             # sometimes connecting reports as failed, but actually succeeds
-            if check_connected "$chosen_id"; then
+            if ! check_connected "$chosen_id"; then
                 echo "could not connect"
                 exit 1
             fi
         fi
+        echo "done."
     else
         echo -n "not paired, pairing and connecting ${DEVICE}..."
         if ! bluetoothctl pair $chosen_id > /dev/null; then
             # sometimes pairing reports as failed, but actually succeeds
-            if check_connected "$chosen_id"; then
+            if ! check_connected "$chosen_id"; then
                 echo "could not connect"
                 exit 1
             fi
         fi
-        echo "done"
-
+        echo "done."
     fi
 
 elif [[ "$1" == "dis" ]] || [[ "$1" == "disconnect" ]]; then
@@ -180,17 +186,28 @@ elif [[ "$1" == "dis" ]] || [[ "$1" == "disconnect" ]]; then
 
     chosen_id=$(cat $IDFILE | awk '$3 == "yes"' | tail -n+"$REPLY" | head -n1 | cut -f1)
     echo -n "disconnecting $DEVICE..."
-    bluetoothctl disconnect $chosen_id
+    bluetoothctl disconnect $chosen_id > /dev/null
     echo "done."
 
 elif [[ "$1" == "disall" ]] || [[ "$1" == "disconnectall" ]]; then
     for x in $(cat $IDFILE | awk '$3 == "yes"' | cut -f 1); do
         bluetoothctl disconnect $x
     done
+elif [[ "$1" == "reset" ]]; then
+    # sometimes bluetooth gets into a bad state
+    # this lets us completely reset it
+    # see https://askubuntu.com/questions/1340713/bluetooth-service-failed-to-set-mode
+    sudo hciconfig hci0 down  # Close HCI device.
+    sudo rmmod btusb          # Remove btusb module from the kernel
+    sudo modprobe btusb       # Add it back
+    sudo hciconfig hci0 up    # Open and initialize HCI device
+    # bluetooth.service should be running at this point
+    if ! systemctl statu bluetooth | grep Running > /dev/null; then
+        echo "bluetooth service not running!"
+        exit 1
+    fi
 else
     echo "unknown command '$1'"
     exit 1
 fi
-
-rm -f $SCANFILE $RAWIDFILE $IDFILE $PAIREDFILE
 

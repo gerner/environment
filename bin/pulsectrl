@@ -15,10 +15,14 @@ set -- `getopt -n$0 -u -a --longoptions="help" "h" "$@"`
 usage="$SCRIPTNAME [option ...] command
 
 commands:
+  info                show info about devices
   source              set defualt source
   sink                set efault sink
-  apploop  [loopname] set up a sink that forwards into a sink named loopname
-                       e.g. for streaming app audio
+  apploop [loopname]  set up a sink that forwards into a sink named loopname
+                        e.g. for streaming app audio
+  monitor|mon         set up a loopback monitor from a selected source to a
+                        selected sink, keeps trunning, ctrl-c or exit tears
+                        down the loopback
 
 options:
   --source    set the default source
@@ -49,10 +53,40 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-if [ $# -eq 0 ]; then
-    echo "wtf"
-    echo "${usage}"
-    exit 1
+if [ $# -eq 0 ] || [[ $1 == "info" ]]; then
+    echo "default source:"
+    echo -n "  "
+    cat $SOURCE_FILE | awk -F\\t '$3 == 1' | cut -f 2
+
+    echo "default sink:"
+    echo -n "  "
+    cat $SINK_FILE | awk -F\\t '$3 == 1' | cut -f 2
+
+    echo ""
+
+    old_ifs="$IFS"
+    IFS=$'\n'
+
+    if [[ -z "$(cat $SOURCE_FILE | awk -F\\t '$3 == 0' | cut -f 2)" ]]; then
+        echo "no other sources"
+    else
+        echo "other sources:"
+        for x in $(cat $SOURCE_FILE | awk -F\\t '$3 == 0' | cut -f 2); do
+            echo "  ${x}"
+        done
+    fi
+
+    if [[ -z "$(cat $SINK_FILE | awk -F\\t '$3 == 0' | cut -f 2)" ]]; then
+        echo "no other sinks"
+    else
+        echo "other sinks:"
+        IFS=$'\n'
+        for x in $(cat $SINK_FILE | awk -F\\t '$3 == 0' | cut -f 2); do
+            echo "  ${x}"
+        done
+    fi
+    IFS="$old_ifs"
+
 elif [[ $1 == "source" ]]; then
     echo "default source:"
     cat $SOURCE_FILE | grep "1$" | cut -f2
@@ -114,4 +148,49 @@ elif [[ $1 == "apploop" ]]; then
     pacmd update-sink-proplist ${loop_name} device.description=${loop_name}
     pactl load-module module-remap-source source_name=${loop_name}.source master=${loop_name}.monitor
     pacmd update-source-proplist ${loop_name}.source device.description=${loop_name}.source
+elif [[ $1 == "monitor" ]] || [[ $1 == "mon" ]]; then
+    # set up a loopback from source to sink as long as we're running
+
+    old_ifs="$IFS"
+    IFS=$'\n'
+    echo "send which source?"
+    select SOURCE_DESC in $(cat $SOURCE_FILE | cut -f2); do
+        if [[ -z "$SOURCE_DESC" ]]; then
+            echo "not a valid option"
+            exit 1
+        fi
+        SELECTED_SOURCE=$(cat $SOURCE_FILE | tail -n+$REPLY | head -n1 | cut -f1)
+        break
+    done
+
+    echo "send to which sink?"
+    select SINK_DESC in $(cat $SINK_FILE | cut -f2); do
+        if [[ -z "$SINK_DESC" ]]; then
+            echo "not a valid option"
+            exit 1
+        fi
+        # now set the default source to the line matching $REPLY
+        SELECTED_SINK=$(cat $SINK_FILE | tail -n+$REPLY | head -n1 | cut -f1)
+        break;
+    done
+    IFS="$old_ifs"
+
+    MODULE_ID=$(pactl load-module module-loopback source=${SELECTED_SOURCE} sink=${SELECTED_SINK})
+    echo "monitor loopback is module ${MODULE_ID}"
+
+    function cleanup_monitor {
+        echo "cleaning up monitor loopback"
+        pacmd unload-module "${MODULE_ID}"
+        STOP_MONITOR=1
+    }
+
+    # run until ctrl-c or exit
+    STOP_MONITOR=""
+    trap 'STOP_MONITOR=1' SIGINT
+    trap 'cleanup_monitor' EXIT
+
+    while [[ -z "${STOP_MONITOR}" ]]; do
+        sleep 0.25
+    done
+
 fi
