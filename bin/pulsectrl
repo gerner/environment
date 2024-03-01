@@ -10,7 +10,7 @@ set -eu -o pipefail
 ###############################################################################
 
 SCRIPTNAME=$(basename $0)
-set -- `getopt -n$0 -u -a --longoptions="help" "h" "$@"`
+set -- `getopt -n$0 -u -a --longoptions="help rnnoise::" "h" "$@"`
 
 usage="$SCRIPTNAME [option ...] command
 
@@ -23,17 +23,26 @@ commands:
   monitor|mon         set up a loopback monitor from a selected source to a
                         selected sink, keeps trunning, ctrl-c or exit tears
                         down the loopback
+  rnnoise [chainname] set up rnnoise filter, creating a new denoised source
 
 options:
-  --source    set the default source
-  --sink      set the default sink
-  -h, --help  show this help message"
+  --source               set the default source
+  --sink                 set the default sink
+  --rnnoise  [settings]  set rnnoise settings default "50,20,0,0,0", settings:
+                           VAD Threshold (%),
+                           VAD Grace Period (ms),
+                           Retroactive VAD Grace Period (ms),
+                           Placeholder1, Placeholder2
+  -h, --help             show this help message"
 
 
 # first get some info
 
 SOURCE_FILE=$(mktemp --tmpdir pulsesourceXXXXX)
 SINK_FILE=$(mktemp --tmpdir pulsesinkXXXXX)
+
+RNNOISE_PATH="/home/nick/.local/share/rnnoise/linux-rnnoise/ladspa/librnnoise_ladspa.so"
+rnnoise_settings="50,20,0,0,0"
 
 trap 'rm -f $SOURCE_FILE $SINK_FILE' EXIT
 
@@ -43,6 +52,10 @@ pacmd list-sinks | grep -e 'index:' -e device.description -e 'name:' | awk '/^ *
 
 while [ $# -gt 0 ]; do
     case $1 in
+        --rnnoise)
+            shift
+            rnnoise_settings=$1
+            ;;
         -h|--help)
             shift
             echo "${usage}"
@@ -133,7 +146,7 @@ elif [[ $1 == "sink" ]]; then
     IFS="$old_ifs"
 elif [[ $1 == "apploop" ]]; then
     # set up a sink that apps can write to
-    # all of this audio is then available from a cooresponding sink
+    # all of this audio is then available from a coresponding source
     #   pulseaudio actually does this for free by creating a monitor source
     #   those sources don't show up in apps, so this creates a source that
     #   will show up and pipes the monitor source into this new source
@@ -192,5 +205,92 @@ elif [[ $1 == "monitor" ]] || [[ $1 == "mon" ]]; then
     while [[ -z "${STOP_MONITOR}" ]]; do
         sleep 0.25
     done
+elif [[ $1 == "rnnoise" ]]; then
+    # name the resulting sink and corresponding source
+    if [[ $# -gt 1 ]]; then
+        chain_name=$2
+    else
+        chain_name="denoised"
+    fi
 
+    chainfile="/tmp/rnnoise.${chain_name}"
+
+    # first check if a chain already exists with that name
+    if (pacmd list-modules | grep "${chain_name}_out" > /dev/null); then
+        echo "an rnnoise chain already exists with that name"
+        read -r -p "Would you like to delete it? [Y/n]" response
+        if [[ "$response" == "Y" ]]; then
+            echo "deleteing..."
+            if ! [ -s "${chainfile}" ]; then
+                echo "chain metadata file \"${chainfile}\" does not exist!"
+                exit 1
+            fi
+            for module_id in $(cat ${chainfile}); do
+                echo $module_id
+            done
+            echo "done"
+        fi
+        exit 0
+    fi
+
+    # choose source
+    echo "source:"
+    old_ifs="$IFS"
+    IFS=$'\n'
+    select SOURCE_DESC in $(cat $SOURCE_FILE | cut -f2); do
+        if [[ -z "$SOURCE_DESC" ]]; then
+            echo "not a valid option"
+            exit 1
+        fi
+        SELECTED_SOURCE=$(cat $SOURCE_FILE | tail -n+$REPLY | head -n1 | cut -f1)
+        break
+    done
+    IFS="$old_ifs"
+
+    # end of the chain
+    MODULE_NULLSINK_ID=$(pactl load-module module-null-sink sink_name="${chain_name}_out" rate=48000)
+    if [[ -z "${MODULE_NULLSINK_ID}" ]]; then
+        echo "could not create null sink"
+        exit 1
+    fi
+    echo "null sink id ${MODULE_NULLSINK_ID}"
+    pacmd update-sink-proplist "${chain_name}_out" device.description="${chain_name}_out"
+
+    # create a source that corresponds to the end of the chain (that will show up in apps since the auto created monitor source will not)
+    MODULE_REMAP_ID=$(pactl load-module module-remap-source source_name="${chain_name}.source" master="${chain_name}_out.monitor")
+    if [[ -z "${MODULE_REMAP_ID}" ]]; then
+        echo "could not create remap"
+        pacmd unload-module "${MODULE_NULLSINK_ID}"
+        exit 1
+    fi
+    echo "remap id ${MODULE_REMAP_ID}"
+    pacmd update-source-proplist "${chain_name}.source" device.description="${chain_name}.source"
+
+    # create the rnnoise sink that writes to the end of the chain
+    MODULE_RNNOISE_ID=$(pactl load-module module-ladspa-sink sink_name="${chain_name}_in" sink_master="${chain_name}_out" label=noise_suppressor_mono plugin="${RNNOISE_PATH}" control=${rnnoise_settings})
+    if [[ -z "${MODULE_RNNOISE_ID}}" ]]; then
+        echo "could not create rnnoise"
+        pacmd unload-module "${MODULE_NULLSINK_ID}"
+        pacmd unload-module "${MODULE_REMAP_ID}"
+        exit 1
+    fi
+    echo "rnnoise id ${MODULE_RNNOISE_ID}"
+
+    # hook the source up to the rnnoise sink
+    MODULE_LOOPBACK_ID=$(pactl load-module module-loopback source="${SELECTED_SOURCE}" sink="${chain_name}_in" channels=1 source_dont_move=true sink_dont_move=true)
+    if [[ -z "${MODULE_LOOPBACK_ID}" ]]; then
+        echo "could not create loopback"
+        pacmd unload-module "${MODULE_NULLSINK_ID}"
+        pacmd unload-module "${MODULE_REMAP_ID}"
+        pacmd unload-module "${MODULE_RNNOISE_ID}"
+        exit 1
+    fi
+    echo "loopback id ${MODULE_LOOPBACK_ID}"
+
+    echo "$MODULE_NULLSINK_ID" > ${chainfile}
+    echo "$MODULE_REMAP_ID" >> ${chainfile}
+    echo "$MODULE_RNNOISE_ID" >> ${chainfile}
+    echo "$MODULE_LOOPBACK_ID" >> ${chainfile}
+
+    echo "chain info saved to ${chainfile}"
 fi
