@@ -113,7 +113,7 @@ while true; do
     cpu_total=$(( $cpu_usr + $cpu_sys + $cpu_idle + $cpu_io ))
 
     volume=$(amixer -D pulse get Master | grep -o '\[[0-9]*%' | tr -d '[%' | awk '{v+=$1;n+=1} END {print int(v/n)}')
-    brightness=$(xbacklight -get)
+    brightness="$(( $(brightnessctl g) * 100 / $(brightnessctl m) ))"
 
     batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { sub("%", "", $6); printf("%.0f\n", $6)} /Charging state/ { print $NF }'`)
 
