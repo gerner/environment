@@ -23,3 +23,5 @@
 
 [rebase]
     stat=true
+[init]
+	defaultBranch = main
