@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# sets volume to 25% on headphone plugin and 50% on unplug
+
 set -eu -o pipefail
 
 # this user should be main user running pulse

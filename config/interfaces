@@ -8,6 +8,10 @@ iface lo inet loopback
 # The primary network interface
 #auto wlan0
 #iface wlan0 inet manual
+
+# this manages wlan0 using wpa-supplicant instead of via NetworkManager
+# as of some time probably in 2021 I don't do this any more and just eat the
+# bloat of NetworkManager.
 iface wlan0 inet dhcp
     wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
 
