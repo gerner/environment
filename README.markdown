@@ -22,7 +22,7 @@ There is a handy install.sh script that will install the necessary files.  This 
 sudo apt install make gawk clang silversearcher-ag dstat pv xscreensaver \
     xss-lock xclip feh rbenv xdotool dunst vim-gtk lxqt-policykit \
     brightnessctl cmake ninja-build libao libcrypto++-dev libgcrypt20-dev \
-    libcurl4-openssl-dev
+    libcurl4-openssl-dev jq
 ```
 
 **Standard Folders**
