@@ -197,3 +197,6 @@ fi
 alias ytmnd=fml
 
 export AWKPATH=".:$HOME/.awk:/usr/share/awk"
+
+# go stuff
+export PATH=$PATH:/usr/lib/go-1.21/bin/
