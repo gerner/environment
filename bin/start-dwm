@@ -37,4 +37,4 @@ fi
 # start libqt polkit agent
 # as per https://www.reddit.com/r/voidlinux/comments/set1s1/gdbuserrororgfreedesktoppolicykit1errorfailed_no/
 # as per https://wiki.archlinux.org/title/Polkit#Authentication_agents
-lxqt-policykit-agent &
+/bin/lxqt-policykit-agent & 2> >(logger -t lxqt-policykit-agent)
