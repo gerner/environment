@@ -20,9 +20,9 @@ There is a handy install.sh script that will install the necessary files.  This 
 
 ```
 sudo apt install make gawk clang silversearcher-ag dstat pv xscreensaver \
-    xss-lock xclip feh rbenv xdotool dunst vim-gtk lxqt-policykit \
-    brightnessctl cmake ninja-build libao libcrypto++-dev libgcrypt20-dev \
-    libcurl4-openssl-dev jq
+    xss-lock xclip feh rbenv xdotool dunst vim-gtk3 lxqt-policykit \
+    brightnessctl cmake ninja-build libao4 libcrypto++-dev libgcrypt20-dev \
+    libcurl4-openssl-dev jq libxft-dev libxinerama-dev acpitool pamixer
 ```
 
 **Standard Folders**
@@ -41,10 +41,10 @@ create a `~/.background` file which should be an image loadable by feh
 
 add user to some groups
 ```
-sudo groupadd nick video
-sudo groupadd nick input
-sudo groupadd nick dialout
-sudo groupadd nick plugdev
+sudo usermod -a -G video nick\
+sudo usermod -a -G input\
+sudo usermod -a -G dialout\
+sudo usermod -a -G plugdev nick
 ```
 
 **More Config Files**
