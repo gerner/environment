@@ -65,7 +65,9 @@ while [ $# -gt 0 ]; do
             bluetoothctl scan on > $SCANFILE &
             blue_pid="$!"
             sleep $SCANTIME
-            kill $blue_pid
+            if ps -p $blue_pid > /dev/null; then
+                kill $blue_pid || true
+            fi
             sleep 0.1
             echo "done."
             #cat $SCANFILE | wc -l
