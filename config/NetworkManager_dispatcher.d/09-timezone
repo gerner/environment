@@ -1,6 +1,9 @@
 #!/bin/sh
 case "$2" in
     up)
-        timedatectl set-timezone "$(curl --fail https://ipapi.co/timezone)"
+	timezone="$(curl --fail https://ipapi.co/timezone)"
+	if ! [[ -z "$timezone" ]]; then
+        	timedatectl set-timezone "$timezone"
+	fi
     ;;
 esac
