@@ -12,8 +12,10 @@ SCANFILE=$(mktemp --tmpdir bluescanXXXXX)
 RAWIDFILE=$(mktemp --tmpdir blueidXXXXX)
 IDFILE=$(mktemp --tmpdir blueidXXXXX)
 PAIREDFILE=$(mktemp --tmpdir bluepairedXXXXX)
+FIFOFILE=$(mktemp -u)
+mkfifo -m 600 "${FIFOFILE}"
 
-trap 'rm -f $SCANFILE $RAWIDFILE $IDFILE $PAIREDFILE' EXIT
+trap 'rm -f $SCANFILE $RAWIDFILE $IDFILE $PAIREDFILE $FIFOFILE' EXIT
 
 SCANTIME=4
 
@@ -62,13 +64,23 @@ while [ $# -gt 0 ]; do
             # get devices via a scan
             echo -n "scanning devices..."
             echo -e "menu scan\nclear\n" | bluetoothctl > /dev/null
-            bluetoothctl scan on > $SCANFILE &
+
+            # we use a FIFO here, and bind fd 3 to it, in order to keep
+            # bluetoothctl live while we do the scan
+            bluetoothctl < $FIFOFILE > $SCANFILE &
             blue_pid="$!"
+            # do the scan and get devices and then turn scanning off
+            exec 3>$FIFOFILE
+            echo "scan on" > $FIFOFILE
             sleep $SCANTIME
+            echo "devices" > $FIFOFILE
+            # leaving scan on seems to cause issues keeping devices connected
+            echo "scan off" > $FIFOFILE
             if ps -p $blue_pid > /dev/null; then
                 kill $blue_pid || true
             fi
             sleep 0.1
+            exec 3>&-
             echo "done."
             #cat $SCANFILE | wc -l
             #cat $SCANFILE | grep "Device" | awk '{print $3}' | sort -u > $RAWIDFILE || true
@@ -101,7 +113,7 @@ for x in $(cat $RAWIDFILE); do
     bluetoothctl info $x | awk '/Device/ {id=$2;} /Alias:/ {match($0, /Alias: (.*)/, m);name=m[1]} /Paired:/ { paired=$2} /Connected:/ {connected=$2} /Trusted:/ { trusted=$2} END {printf("%s\t%s\t%s\t%s\t%s\n", id, paired, connected, trusted, name)}' >> $IDFILE
 done
 
-bluetoothctl paired-devices | awk '{match($0, /Device ([^ ]+) (.*)$/, m); printf("%s\t%s\n", m[1], m[2])}' > $PAIREDFILE
+bluetoothctl devices Paired | awk '{match($0, /Device ([^ ]+) (.*)$/, m); printf("%s\t%s\n", m[1], m[2])}' > $PAIREDFILE
 
 
 # do stuff
