@@ -1,4 +1,4 @@
-execute pathogen#infect()
+"execute pathogen#infect()
 
 filetype plugin indent on
 set tags=.tags,.tags-source
@@ -88,3 +88,6 @@ let g:indentLine_setConceal=0
 let g:vim_json_conceal=0
 autocmd FileType markdown setlocal conceallevel=0
 
+" don't add automatic comment continuation
+autocmd BufNewFile,BufRead * setlocal formatoptions-=cro
+syntax on
