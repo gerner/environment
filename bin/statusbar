@@ -11,6 +11,8 @@ set -- `getopt -n$0 -u -a --longoptions="start stop" "xc" "$@"`
 use_colors=""
 use_xsetroot=""
 
+has_acpi=""
+
 while [ $# -gt 0 ]; do
     case $1 in
         --start) 
@@ -30,8 +32,28 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+show_wifi=1
+show_cpufreq=1
+show_cpu=1
+show_disk=1
+show_net=1
+show_mem=1
+show_volume=1
+show_brightness=1
+show_batt=1
+show_temp=1
+show_datetime=1
+
+if [ -f ~/.statusbarrc ]; then
+    . ~/.statusbarrc
+fi
+
+if acpitool > /dev/null; then
+    has_acpi=1
+fi
+
 function get_c {
-    if [ -z $use_colors ]; then
+    if [ -z "$use_colors" ]; then
         true
     elif [ $# -lt 2 ] || [ -z "$2" ]; then
         echo "\\x01"
@@ -97,7 +119,7 @@ while true; do
     net_after=(`cat /proc/net/dev | tail -n+3 | tr ':' ' ' | awk '{r+=$2;w+=$10} END {printf("%d %d\n", r,w)}'`)
     cpu_after=(`cat /proc/stat | head -n1`)
 
-    cpu_freq=`cat /proc/cpuinfo | grep "cpu MHz" | awk '{s+=$NF;n+=1} END {print int(s/n)}'`
+    cpu_freq=`cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq | awk '{s+=$NF;n+=1} END {print int(s/n/1000)}'`
     #mem[0] used (excluding buffers and cached)
     #mem[1] free
     #mem[2] buffers
@@ -115,7 +137,11 @@ while true; do
     volume=$(pamixer --get-volume)
     brightness="$(( $(brightnessctl g) * 100 / $(brightnessctl m) ))"
 
-    batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { sub("%", "", $6); printf("%.0f\n", $6)} /Charging state/ { print $NF }'`)
+    if [ -z "${has_acpi}" ]; then
+        batt=("100" "Charged")
+    else
+        batt=(`acpitool -B | tr -d ',' | awk '/Remaining capacity/ { sub("%", "", $6); printf("%.0f\n", $6)} /Charging state/ { print $NF }'`)
+    fi
 
     ssid=`iwgetid -r` || true
     wifiqual=`iwconfig 2> /dev/null | grep -o "Link Quality=[0-9]*/[0-9]*" | grep -o "[0-9]*/[0-9]*"` || true
@@ -136,25 +162,38 @@ while true; do
         charge="="
     fi
 
-    statusline=$( if [ ! -z "$ssid" ]
-    then
-        printf "%s %3s%%|" "$ssid" $wifiqual
-    elif [ ! -z "$ipaddr" ]; then
-        printf "%s %s|" $ipaddr
-    fi
-        printf "C: %sMHz|C: %s|D: %s %s|N: %s %s|M: %s %s|V: %s%%|L: %s%%|B: %2s%% %s| %s" \
-            "$(format_n_long 4 $cpu_freq -gt 1600 1200 1000)" \
-            "$(format_n $(( ($cpu_usr+${cpu_sys}+${cpu_io})*100/$cpu_total )) -lt 5 20 60)" \
-            "$(format_h $(( (${disk_after[0]} - ${disk_before[0]})/$interval )) -gt 4096000000 1024000 1024 1)" \
-            "$(format_h $(( (${disk_after[1]} - ${disk_before[1]})/$interval )) -gt 4096000000 1024000 1024 1)" \
-            "$(format_h $(( (${net_after[0]} - ${net_before[0]})/$interval )) -gt 4096000000 1024000 1024 1)" \
-            "$(format_h $(( (${net_after[1]} - ${net_before[1]})/$interval )) -gt 4096000000 1024000 1024 1)" \
+    temperature=$(cat /sys/class/thermal/thermal_zone0/temp)
+    temperature=$(bc 2> /dev/null <<< "scale=1;$temperature / 1000")
+
+    statusline=$(
+        if [ -n "${show_wifi}" ]; then if [ -n "$ssid" ]; then
+            printf "%s %3s%%|" "$ssid" $wifiqual
+        elif [ -n "$ipaddr" ]; then
+            printf "%s %s|" $ipaddr
+        fi; fi
+        if [ -n "${show_cpufreq}" ]; then printf "C: %sMHz|" "$(format_n_long 4 $cpu_freq -gt 1600 1200 1000)"; fi
+        if [ -n "${show_cpu}" ]; then printf "C: %s|" "$(format_n $(( ($cpu_usr+${cpu_sys}+${cpu_io})*100/$cpu_total )) -lt 5 20 60)"; fi
+        if [ -n "${show_disk}" ]; then
+            printf "D: %s %s|"\
+            "$(format_h $(( (${disk_after[0]} - ${disk_before[0]})/$interval )) -gt 4096000000 1024000 1024 1)"\
+            "$(format_h $(( (${disk_after[1]} - ${disk_before[1]})/$interval )) -gt 4096000000 1024000 1024 1)"
+        fi
+        if [ -n "${show_net}" ]; then
+            printf "N: %s %s|"\
+            "$(format_h $(( (${net_after[0]} - ${net_before[0]})/$interval )) -gt 4096000000 1024000 1024 1)"\
+            "$(format_h $(( (${net_after[1]} - ${net_before[1]})/$interval )) -gt 4096000000 1024000 1024 1)"
+        fi
+        if [ -n "${show_mem}" ]; then
+            printf "M: %s %s|"\
             "$(format_h ${mem[0]} -lt 1073741824 5368709120 7516192768)" \
-            "$(format_h ${mem[4]} -gt 12884901888 8589934592 2147483648)" \
-            "${volume}" \
-            "${brightness}" \
-            "$(format_n ${batt[0]} -gt 99 60 30)" ${charge} \
-            "`date +'%a %b %d %H:%M'`" )
+            "$(format_h ${mem[4]} -gt 12884901888 8589934592 2147483648)"
+        fi
+        if [ -n "${show_volume}" ]; then printf "V: %s%%|" "${volume}"; fi
+        if [ -n "${show_brightness}" ]; then printf "L: %s%%|" "${brightness}"; fi
+        if [ -n "${show_batt}" ]; then printf "B: %2s%% %s|" "$(format_n ${batt[0]} -gt 99 60 30)" ${charge}; fi
+        if [ -n "${show_temp}" ]; then printf "T: %4s°C|" "$(format_n ${temperature} -lt 40 60 80)"; fi
+        if [ -n "${show_datetime}" ]; then printf "`date +'%a %b %d %H:%M'`"; fi
+    )
 
     if [ "${batt[0]/.*}" -lt "$BATTERY_CRITICAL_THRESHOLD" ] && [ "${batt[1]}" != "Charging" ]; then
         #once we go from non-critical to critical flash an osd message if we can
