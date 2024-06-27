@@ -22,7 +22,8 @@ There is a handy install.sh script that will install the necessary files.  This 
 sudo apt install make gawk clang silversearcher-ag dstat pv xscreensaver \
     xss-lock xclip feh rbenv xdotool dunst vim-gtk3 lxqt-policykit \
     brightnessctl cmake ninja-build libao4 libcrypto++-dev libgcrypt20-dev \
-    libcurl4-openssl-dev jq libxft-dev libxinerama-dev acpitool pamixer
+    libcurl4-openssl-dev jq libxft-dev libxinerama-dev acpitool pamixer \
+    imagemagick
 ```
 
 **Standard Folders**
@@ -63,7 +64,13 @@ run by root.
   * make Arduino Uno R4 serial port owned by `plugdev` group so users can flash without sudo
   * treat RT Systems cables (radio programming cables) as FTDI cables by loading `ftdi_sio` kernel module for them
 
-### Old Stuff
+## Other Tools
+
+* DWM: a window manager https://github.com/gerner/dwm
+* ST: a terminal emulator: https://github.com/gerner/st
+* Dmenu: a program launcher: git@github.com:gerner/dmenu.git
+
+## Old Stuff
 
 Not really used any more, but could.
 
