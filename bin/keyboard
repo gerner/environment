@@ -2,4 +2,10 @@
 
 set -eu -o pipefail
 
-svkbd-en
+KEYBOARD=svkbd-en
+PIDFILE=/tmp/keyboard.pid
+
+if ! start-stop-daemon --start -p ${PIDFILE} -q -b -m -x "$(which ${KEYBOARD})" ; then
+    start-stop-daemon --stop -p ${PIDFILE}
+fi
+
