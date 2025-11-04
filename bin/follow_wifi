@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+# --- Configuration ---
+# patterns to look for
+CONNECTED_PATTERN="Connected to wireless network"
+DISCONNECTED_PATTERN="NetworkManager state is now DISCONNECTED"
+
+# Define the output file path
+OUTPUT_FILE="/tmp/current_wifi_network"
+
+# ---------------------
+
+# Ensure the output file exists and is empty initially
+> "$OUTPUT_FILE"
+
+# Use journalctl to follow logs in real-time
+# The output is piped to a while loop for processing.
+journalctl -f -u NetworkManager -n 100 | 
+while IFS= read -r line; do
+    # Check if the current line matches the pattern using bash regex matching
+    if [[ "$line" == *"$CONNECTED_PATTERN"* ]]; then
+        # Overwrite the output file with ONLY the current matching line
+        # We use a temporary file approach to ensure atomic writes if necessary,
+        # but a simple overwrite (>) is sufficient for this simple use case.
+        NETWORK="$(echo -n "$line" | sed -E 's/^.*Connected to wireless network "(.*)"$/\1/')"
+        echo -n "$NETWORK" > $OUTPUT_FILE
+    elif [[ "$line" == *"$DISCONNECTED_PATTERN"* ]]; then
+        echo -n "" > "$OUTPUT_FILE"
+    fi
+done
